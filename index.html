@@ -5,448 +5,1174 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Fluxo Financeiro" />
-  <meta name="theme-color" content="#0f172a" />
-  <title>Fluxo — Controle Financeiro (Dia, Mês, Ano)</title>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <meta name="theme-color" content="#07110e" />
+  <meta name="description" content="Painel financeiro completo com gestão de Saldo, Dívidas, Investimentos, fluxo por Dia/Mês/Ano e simulador de cortes." />
+  <title>Fluxo — Saldo, Dívidas &amp; Investimentos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --background: #f8fafc;
+      --bg: #f6f8f7;
+      --bg-sidebar: #ffffff;
+      --bg-subtle: #edf2ef;
       --card: #ffffff;
-      --border: #e2e8f0;
-      --foreground: #0f172a;
-      --muted-foreground: #64748b;
-      --primary: #2563eb;
-      --primary-foreground: #ffffff;
-      --secondary: #f1f5f9;
-      --secondary-foreground: #0f172a;
-      --success: #16a34a;
+      --border: rgba(15, 23, 42, 0.08);
+      --border-strong: rgba(15, 23, 42, 0.15);
+      --fg: #0f172a;
+      --fg-muted: #52606d;
+      --fg-faint: #8492a6;
+
+      --primary: #047857;
+      --primary-hover: #065f46;
+      --primary-soft: rgba(4, 120, 87, 0.1);
+      --primary-fg: #ffffff;
+
+      --saldo: #0284c7;
+      --saldo-soft: rgba(2, 132, 199, 0.1);
+      --divida: #e11d48;
+      --divida-soft: rgba(225, 29, 72, 0.1);
+      --invest: #059669;
+      --invest-soft: rgba(5, 150, 105, 0.1);
+
       --warning: #d97706;
-      --error: #dc2626;
+      --warning-soft: rgba(217, 119, 6, 0.11);
+      --secondary: #f1f5f3;
+
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 6px 20px rgba(15, 23, 42, 0.06);
+      --shadow-lg: 0 24px 48px rgba(15, 23, 42, 0.14);
+      --radius: 14px;
+      --radius-sm: 9px;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --background: #0b1120;
-        --card: #111827;
-        --border: #1f2937;
-        --foreground: #f8fafc;
-        --muted-foreground: #94a3b8;
-        --primary: #3b82f6;
-        --primary-foreground: #ffffff;
-        --secondary: #1e293b;
-        --secondary-foreground: #f8fafc;
-        --success: #22c55e;
-        --warning: #f59e0b;
-        --error: #ef4444;
-      }
+
+    html.dark {
+      --bg: #070d0b;
+      --bg-sidebar: #0c1512;
+      --bg-subtle: #111e1a;
+      --card: #0f1916;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.15);
+      --fg: #f1f5f9;
+      --fg-muted: #94a3b8;
+      --fg-faint: #64748b;
+
+      --primary: #10b981;
+      --primary-hover: #34d399;
+      --primary-soft: rgba(16, 185, 129, 0.15);
+      --primary-fg: #042f2e;
+
+      --saldo: #38bdf8;
+      --saldo-soft: rgba(56, 189, 248, 0.14);
+      --divida: #fb7185;
+      --divida-soft: rgba(251, 113, 133, 0.14);
+      --invest: #34d399;
+      --invest-soft: rgba(52, 211, 153, 0.14);
+
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.14);
+      --secondary: #15231e;
+
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 24px 48px rgba(0, 0, 0, 0.6);
     }
-    * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }
-    .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .hidden { display: none !important; }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+    /* Sidebar + Workspace Layout */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      display: none;
+    }
+    @media (min-width: 960px) {
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 252px;
+        flex-shrink: 0;
+        background: var(--bg-sidebar);
+        border-right: 1px solid var(--border);
+        padding: 22px 14px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 8px 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: var(--primary-fg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .brand-name {
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .brand-tag {
+      font-size: 0.72rem;
+      color: var(--fg-muted);
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--fg-muted);
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+    .nav-item:hover {
+      background: var(--secondary);
+      color: var(--fg);
+    }
+    .nav-item.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .nav-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-badge {
+      font-size: 0.7rem;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: var(--secondary);
+      color: var(--fg-muted);
+    }
+    .nav-item.active .nav-badge {
+      background: var(--primary);
+      color: var(--primary-fg);
+    }
+
+    .sidebar-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Main Content */
+    .main-wrap {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    @media (min-width: 960px) {
+      .topbar { padding: 16px 28px; }
+    }
+
+    .mobile-nav {
+      display: flex;
+      gap: 6px;
+      padding: 10px 16px;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .mobile-nav::-webkit-scrollbar { display: none; }
+    @media (min-width: 960px) {
+      .mobile-nav { display: none; }
+    }
+    .mobile-tab {
+      padding: 7px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--fg-muted);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .mobile-tab.active {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-color: transparent;
+    }
+
+    .content {
+      max-width: 1120px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px 16px 56px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    @media (min-width: 960px) {
+      .content { padding: 24px 28px 64px; gap: 22px; }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-fg);
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary {
+      background: var(--card);
+      color: var(--fg);
+      border-color: var(--border-strong);
+    }
+    .btn-secondary:hover { background: var(--secondary); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--fg-muted);
+      border-color: var(--border);
+    }
+    .btn-ghost:hover { background: var(--secondary); color: var(--fg); }
+    .btn-icon { width: 34px; height: 34px; padding: 0; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      padding: 18px;
+    }
+    @media (min-width: 640px) {
+      .card { padding: 20px; }
+    }
+
+    /* Wealth Pillars (Saldo, Dívidas, Investimentos, Patrimônio) */
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 580px) {
+      .pillars-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1100px) {
+      .pillars-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    }
+
+    .pillar-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .pillar-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .pillar-saldo::before { background: var(--saldo); }
+    .pillar-divida::before { background: var(--divida); }
+    .pillar-invest::before { background: var(--invest); }
+    .pillar-net::before { background: var(--fg); }
+
+    .pillar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .pillar-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--fg-muted);
+    }
+    .pillar-chip {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .chip-saldo { background: var(--saldo-soft); color: var(--saldo); }
+    .chip-divida { background: var(--divida-soft); color: var(--divida); }
+    .chip-invest { background: var(--invest-soft); color: var(--invest); }
+    .chip-net { background: var(--secondary); color: var(--fg); }
+
+    .pillar-val {
+      font-family: var(--font-mono);
+      font-size: 1.38rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .pillar-sub {
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+    }
+
+    /* Asset vs Debt Ratio Bar */
+    .ratio-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 14px 18px;
+    }
+    .ratio-track {
+      display: flex;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--bg-subtle);
+      gap: 2px;
+    }
+    .ratio-seg-saldo { background: var(--saldo); transition: width 0.3s ease; }
+    .ratio-seg-invest { background: var(--invest); transition: width 0.3s ease; }
+    .ratio-seg-divida { background: var(--divida); transition: width 0.3s ease; }
+
+    /* Grids */
+    .grid-3 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 768px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 900px) { .grid-2 { grid-template-columns: repeat(2, 1fr); } }
+
+    .grid-chart { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 1024px) { .grid-chart { grid-template-columns: 2fr 1fr; } }
+
+    .tab-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      animation: fadeSlide 0.16s ease-out;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Segmented Sub-tabs for Saldo / Dívidas / Investimentos */
+    .seg-tabs {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      padding: 4px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+    }
+    .seg-btn {
+      padding: 7px 14px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--fg-muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+    .seg-btn.active {
+      background: var(--card);
+      color: var(--fg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Typography & Rows */
+    .section-title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    .section-sub {
+      margin: 2px 0 0;
+      font-size: 0.78rem;
+      color: var(--fg-muted);
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      border-radius: 999px;
+      background: var(--secondary);
+      color: var(--fg-muted);
+      border: 1px solid var(--border);
+    }
+    .pill-success { background: var(--invest-soft); color: var(--invest); border-color: transparent; }
+    .pill-warning { background: var(--warning-soft); color: var(--warning); border-color: transparent; }
+    .pill-error { background: var(--divida-soft); color: var(--divida); border-color: transparent; }
+    .pill-saldo { background: var(--saldo-soft); color: var(--saldo); border-color: transparent; }
+
+    .metric-rows { display: flex; flex-direction: column; gap: 9px; font-size: 0.82rem; }
+    .metric-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .metric-row-total {
+      padding-top: 9px;
+      margin-top: 2px;
+      border-top: 1px dashed var(--border-strong);
+      font-weight: 700;
+    }
+
+    /* Forms */
+    .input, .select {
+      width: 100%;
+      padding: 8px 11px;
+      font-family: inherit;
+      font-size: 0.8125rem;
+      color: var(--fg);
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      outline: none;
+    }
+    .input:focus, .select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .input-group:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-soft);
+    }
+    .input-prefix {
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--fg-muted);
+      background: var(--secondary);
+      border-right: 1px solid var(--border);
+    }
+    .input-group input {
+      width: 100%;
+      padding: 8px 11px;
+      border: none;
+      background: transparent;
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--fg-muted);
+      margin-bottom: 5px;
+    }
+
+    /* Lists */
+    .list-divide > * + * { border-top: 1px solid var(--border); }
+    .list-row {
+      padding: 12px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .list-row-cut {
+      padding: 14px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    @media (min-width: 640px) {
+      .list-row-cut { flex-direction: row; align-items: center; justify-content: space-between; }
+    }
+
+    .del-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--fg-faint);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .del-btn:hover { background: var(--divida-soft); color: var(--divida); }
+
+    /* Chart */
+    .chart-wrap { position: relative; width: 100%; height: 240px; }
+    .chart-wrap canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+    .chart-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 8px 11px;
+      font-size: 0.75rem;
+      box-shadow: var(--shadow-md);
+      z-index: 10;
+      white-space: nowrap;
+      transform: translate(-50%, -110%);
+    }
+
+    /* Diagnosis */
+    .diag-box {
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .diag-box.is-error { background: var(--divida-soft); border-color: transparent; }
+    .diag-box.is-warning { background: var(--warning-soft); border-color: transparent; }
+    .diag-box.is-success { background: var(--invest-soft); border-color: transparent; }
+
+    /* Sliders & Progress */
+    input[type="range"].cut-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 125px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--secondary);
+      border: 1px solid var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"].cut-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid var(--card);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+      cursor: pointer;
+    }
+    .quick-cut-btn {
+      padding: 2px 7px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--fg-muted);
+      cursor: pointer;
+    }
+    .quick-cut-btn.active, .quick-cut-btn:hover {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-color: transparent;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--bg-subtle);
+      overflow: hidden;
+    }
+    .progress-fill { height: 100%; border-radius: 999px; background: var(--primary); transition: width 0.3s ease; }
+
+    .sim-banner {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+    }
+    @media (min-width: 640px) { .sim-banner { grid-template-columns: repeat(3, 1fr); } }
+
+    .api-log {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--fg-muted);
+      white-space: pre-wrap;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(7, 13, 11, 0.6);
+      backdrop-filter: blur(5px);
+    }
+    .modal-panel {
+      width: 100%;
+      max-width: 440px;
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--fg);
+      color: var(--bg);
+      font-size: 0.8rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-md);
+    }
+
+    .text-saldo { color: var(--saldo); }
+    .text-divida { color: var(--divida); }
+    .text-invest { color: var(--invest); }
+    .text-warning { color: var(--warning); }
+    .text-muted { color: var(--fg-muted); }
   </style>
 </head>
-<body class="bg-[var(--background)] text-[var(--foreground)] antialiased m-0 p-0 min-h-screen">
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-    <!-- Header -->
-    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
+<body>
+  <div class="layout">
+    <!-- Sidebar (Desktop) -->
+    <aside class="sidebar">
       <div>
-        <h1 class="text-xl font-semibold tracking-tight text-[var(--foreground)]">Fluxo Financeiro</h1>
-        <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
-          Saldos atuais, integração via API, cálculo por dia/mês/ano e plano de cortes.
-        </p>
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-name">Fluxo</div>
+            <div class="brand-tag">Patrimônio &amp; Caixa</div>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Navegação lateral">
+          <button data-tab="visao" class="nav-item active">
+            <span class="nav-item-left">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+              Visão Geral
+            </span>
+          </button>
+          <button data-tab="patrimonio" class="nav-item">
+            <span class="nav-item-left">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+              Saldo, Dívidas &amp; Invest.
+            </span>
+            <span id="badge-contas" class="nav-badge">0</span>
+          </button>
+          <button data-tab="cortes" class="nav-item">
+            <span class="nav-item-left">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+              Simulador de Cortes
+            </span>
+            <span id="badge-cortes" class="nav-badge">0</span>
+          </button>
+          <button data-tab="historico" class="nav-item">
+            <span class="nav-item-left">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              Lançamentos &amp; Metas
+            </span>
+            <span id="badge-lancamentos" class="nav-badge">0</span>
+          </button>
+        </nav>
       </div>
-      <div class="flex flex-wrap items-center gap-2">
-        <button id="btn-quick-add" class="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition cursor-pointer">
-          + Novo Lançamento
-        </button>
-        <button id="btn-open-api" class="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] hover:opacity-90 transition cursor-pointer">
+
+      <div class="sidebar-footer">
+        <button id="btn-open-api" class="btn btn-secondary" style="width: 100%; justify-content: flex-start;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           Integrar API
         </button>
-        <button id="btn-export" class="px-2.5 py-1.5 text-xs rounded-md border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition cursor-pointer" title="Exportar dados em JSON">
-          Exportar
-        </button>
-        <label class="px-2.5 py-1.5 text-xs rounded-md border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition cursor-pointer" title="Importar backup JSON">
-          Importar
-          <input id="input-import" type="file" accept=".json" class="hidden" />
-        </label>
-      </div>
-    </header>
-
-    <!-- Navigation Tabs -->
-    <nav class="flex items-center gap-1 border-b border-[var(--border)] overflow-x-auto">
-      <button data-tab="visao" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-[var(--primary)] text-[var(--foreground)] whitespace-nowrap cursor-pointer">
-        Visão Dia / Mês / Ano
-      </button>
-      <button data-tab="cortes" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] whitespace-nowrap cursor-pointer">
-        O que devo diminuir
-      </button>
-      <button data-tab="saldos" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] whitespace-nowrap cursor-pointer">
-        Saldos &amp; APIs
-      </button>
-      <button data-tab="historico" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] whitespace-nowrap cursor-pointer">
-        Lançamentos &amp; Metas
-      </button>
-    </nav>
-
-    <!-- KPI Strip (Always Visible) -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3.5">
-        <div class="text-xs text-[var(--muted-foreground)]">Saldo Atual Consolidado</div>
-        <div id="kpi-saldo" class="text-lg font-semibold tabular-nums mt-1">R$ 0,00</div>
-        <div id="kpi-saldo-sub" class="text-xs text-[var(--muted-foreground)] mt-1">0 contas registradas</div>
-      </div>
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3.5">
-        <div class="text-xs text-[var(--muted-foreground)]">Disponível por Dia</div>
-        <div id="kpi-dia" class="text-lg font-semibold tabular-nums mt-1">R$ 0,00</div>
-        <div id="kpi-dia-sub" class="text-xs text-[var(--muted-foreground)] mt-1">Líquido diário estimado</div>
-      </div>
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3.5">
-        <div class="text-xs text-[var(--muted-foreground)]">Resultado do Mês</div>
-        <div id="kpi-mes" class="text-lg font-semibold tabular-nums mt-1">R$ 0,00</div>
-        <div id="kpi-mes-sub" class="text-xs text-[var(--muted-foreground)] mt-1">Receitas - Despesas</div>
-      </div>
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3.5">
-        <div class="text-xs text-[var(--muted-foreground)]">Projeção em 1 Ano</div>
-        <div id="kpi-ano" class="text-lg font-semibold tabular-nums mt-1">R$ 0,00</div>
-        <div id="kpi-ano-sub" class="text-xs text-[var(--muted-foreground)] mt-1">Saldo atual + 12 meses</div>
-      </div>
-    </section>
-
-    <!-- TAB 1: VISÃO DIA / MÊS / ANO -->
-    <main id="tab-visao" class="tab-panel space-y-5">
-      <!-- Period Comparison Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- DIA -->
-        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold">Cálculo por Dia</h2>
-            <span class="text-xs text-[var(--muted-foreground)]">Base 30 dias/mês</span>
-          </div>
-          <div class="space-y-2 text-xs">
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Entrada média/dia</span>
-              <span id="dia-receita" class="font-mono tabular-nums text-[var(--success)]">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Custo fixo/dia</span>
-              <span id="dia-fixo" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Gasto variável/dia</span>
-              <span id="dia-variavel" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="pt-2 border-t border-[var(--border)] flex justify-between font-medium">
-              <span>Saldo líquido/dia</span>
-              <span id="dia-liquido" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between text-[var(--muted-foreground)]">
-              <span>Teto seguro hoje (c/ meta)</span>
-              <span id="dia-teto" class="font-mono tabular-nums font-medium text-[var(--foreground)]">R$ 0,00</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- MÊS -->
-        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold">Cálculo do Mês</h2>
-            <span id="mes-atual-label" class="text-xs text-[var(--muted-foreground)]"></span>
-          </div>
-          <div class="space-y-2 text-xs">
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Receitas mensais</span>
-              <span id="mes-receita" class="font-mono tabular-nums text-[var(--success)]">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Despesas fixas</span>
-              <span id="mes-fixo" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Despesas variáveis</span>
-              <span id="mes-variavel" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Provisão anual (1/12)</span>
-              <span id="mes-anual-rateio" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="pt-2 border-t border-[var(--border)] flex justify-between font-medium">
-              <span>Balanço mensal</span>
-              <span id="mes-liquido" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ANO -->
-        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold">Cálculo do Ano</h2>
-            <span class="text-xs text-[var(--muted-foreground)]">12 meses</span>
-          </div>
-          <div class="space-y-2 text-xs">
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Receita anual</span>
-              <span id="ano-receita" class="font-mono tabular-nums text-[var(--success)]">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Gasto mensal × 12</span>
-              <span id="ano-recorrente" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[var(--muted-foreground)]">Custos anuais avulsos</span>
-              <span id="ano-avulsos" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="pt-2 border-t border-[var(--border)] flex justify-between font-medium">
-              <span>Economia / Déficit anual</span>
-              <span id="ano-liquido" class="font-mono tabular-nums">R$ 0,00</span>
-            </div>
-            <div class="flex justify-between text-[var(--muted-foreground)]">
-              <span>Patrimônio projetado</span>
-              <span id="ano-patrimonio" class="font-mono tabular-nums font-medium text-[var(--foreground)]">R$ 0,00</span>
-            </div>
-          </div>
+        <div style="display: flex; gap: 6px;">
+          <button id="btn-export" class="btn btn-ghost" style="flex: 1;">Exportar</button>
+          <label class="btn btn-ghost" style="flex: 1; cursor: pointer;">
+            Importar
+            <input id="input-import" type="file" accept=".json" class="hidden" />
+          </label>
         </div>
       </div>
+    </aside>
 
-      <!-- Projection Chart + Quick Diagnosis -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-sm font-semibold">Projeção de Saldo — Próximos 12 Meses</h3>
-              <p class="text-xs text-[var(--muted-foreground)]">Linha sólida: ritmo atual | Linha tracejada: com cortes simulados</p>
-            </div>
-          </div>
-          <div class="w-full h-56 relative">
-            <canvas id="chart-projection" class="w-full h-full"></canvas>
-          </div>
+    <!-- Main Workspace -->
+    <div class="main-wrap">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div>
+          <h1 id="page-title" style="margin: 0; font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em;">Visão Geral do Patrimônio</h1>
+          <p style="margin: 0; font-size: 0.76rem;" class="text-muted">Saldo em contas, dívidas, investimentos e fluxo diário/mensal/anual.</p>
         </div>
-
-        <!-- Quick Action & Goal Box -->
-        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 flex flex-col justify-between space-y-4">
-          <div class="space-y-3">
-            <h3 class="text-sm font-semibold">Meta de Economia Mensal</h3>
-            <p class="text-xs text-[var(--muted-foreground)]">
-              Defina quanto você quer guardar por mês para o app calcular o que precisa diminuir.
-            </p>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-[var(--muted-foreground)]">R$</span>
-              <input id="input-meta-mensal" type="number" min="0" step="50" class="w-full px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] tabular-nums" />
-            </div>
-            <div id="diagnostico-resumo" class="p-3 rounded-md bg-[var(--background)] border border-[var(--border)] text-xs space-y-1.5">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-          <button data-goto-tab="cortes" class="w-full py-2 text-xs font-medium rounded-md bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] hover:opacity-90 transition cursor-pointer">
-            Abrir Simulador de Cortes &rarr;
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="btn-theme" class="btn btn-ghost btn-icon" title="Alternar tema" aria-label="Alternar tema">
+            <svg id="icon-sun" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+          </button>
+          <button id="btn-quick-add" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo Lançamento
           </button>
         </div>
-      </div>
-    </main>
+      </header>
 
-    <!-- TAB 2: O QUE DEVO DIMINUIR -->
-    <main id="tab-cortes" class="tab-panel hidden space-y-5">
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 class="text-sm font-semibold">Diagnóstico: O que devo diminuir?</h2>
-            <p class="text-xs text-[var(--muted-foreground)]">
-              Priorizamos gastos marcados como "Cortável" e as maiores categorias variáveis. Marque ou ajuste o corte para simular o impacto no Dia, Mês e Ano.
-            </p>
+      <!-- Mobile Navigation -->
+      <nav class="mobile-nav" aria-label="Navegação móvel">
+        <button data-tab="visao" class="mobile-tab active">Visão Geral</button>
+        <button data-tab="patrimonio" class="mobile-tab">Saldo, Dívidas &amp; Invest.</button>
+        <button data-tab="cortes" class="mobile-tab">Cortes</button>
+        <button data-tab="historico" class="mobile-tab">Lançamentos &amp; Metas</button>
+      </nav>
+
+      <div class="content">
+        <!-- 4 Pillars Strip: Saldo, Dívidas, Investimentos, Patrimônio Líquido -->
+        <section class="pillars-grid" aria-label="Resumo patrimonial">
+          <div class="card pillar-card pillar-saldo">
+            <div class="pillar-head">
+              <span class="pillar-label">Saldo em Contas</span>
+              <span class="pillar-chip chip-saldo">Liquidez</span>
+            </div>
+            <div id="kpi-saldo-contas" class="pillar-val text-saldo">R$ 0,00</div>
+            <div id="kpi-saldo-sub" class="pillar-sub">Conta corrente e dinheiro</div>
           </div>
-          <button id="btn-reset-sim" class="px-2.5 py-1 text-xs rounded-md border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer self-start">
-            Zerar Simulação
-          </button>
-        </div>
 
-        <!-- Simulation Result Banner -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
-          <div>
-            <div class="text-xs text-[var(--muted-foreground)]">Economia Simulada / Mês</div>
-            <div id="sim-eco-mes" class="text-base font-semibold tabular-nums text-[var(--success)] mt-0.5">R$ 0,00</div>
+          <div class="card pillar-card pillar-divida">
+            <div class="pillar-head">
+              <span class="pillar-label">Dívidas &amp; Faturas</span>
+              <span class="pillar-chip chip-divida">Passivos</span>
+            </div>
+            <div id="kpi-dividas" class="pillar-val text-divida">R$ 0,00</div>
+            <div id="kpi-dividas-sub" class="pillar-sub">Cartões e empréstimos</div>
           </div>
-          <div>
-            <div class="text-xs text-[var(--muted-foreground)]">Ganho por Dia</div>
-            <div id="sim-eco-dia" class="text-base font-semibold tabular-nums mt-0.5">+ R$ 0,00/dia</div>
+
+          <div class="card pillar-card pillar-invest">
+            <div class="pillar-head">
+              <span class="pillar-label">Investimentos</span>
+              <span class="pillar-chip chip-invest">Ativos</span>
+            </div>
+            <div id="kpi-invest" class="pillar-val text-invest">R$ 0,00</div>
+            <div id="kpi-invest-sub" class="pillar-sub">Reservas, CDB, ações</div>
           </div>
-          <div>
-            <div class="text-xs text-[var(--muted-foreground)]">Novo Balanço Anual</div>
-            <div id="sim-novo-ano" class="text-base font-semibold tabular-nums mt-0.5">R$ 0,00</div>
+
+          <div class="card pillar-card pillar-net">
+            <div class="pillar-head">
+              <span class="pillar-label">Patrimônio Líquido</span>
+              <span class="pillar-chip chip-net">Consolidado</span>
+            </div>
+            <div id="kpi-patrimonio" class="pillar-val">R$ 0,00</div>
+            <div id="kpi-patrimonio-sub" class="pillar-sub">Projeção 1 ano: R$ 0,00</div>
           </div>
-        </div>
+        </section>
 
-        <!-- Cuttable Items List -->
-        <div id="cortes-lista" class="divide-y divide-[var(--border)]">
-          <!-- Populated by JS -->
-        </div>
-      </div>
+        <!-- Composition Bar -->
+        <section class="card ratio-bar-wrap" aria-label="Composição patrimonial">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.78rem;">
+            <span style="font-weight: 700;">Composição: Saldo vs. Investimentos vs. Dívidas</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;" class="text-muted">
+              <span>● <strong class="text-saldo">Saldo</strong> <span id="pct-saldo" class="mono">0%</span></span>
+              <span>● <strong class="text-invest">Investimentos</strong> <span id="pct-invest" class="mono">0%</span></span>
+              <span>● <strong class="text-divida">Dívidas</strong> <span id="pct-divida" class="mono">0%</span></span>
+            </div>
+          </div>
+          <div class="ratio-track">
+            <div id="bar-saldo" class="ratio-seg-saldo" style="width: 34%;"></div>
+            <div id="bar-invest" class="ratio-seg-invest" style="width: 33%;"></div>
+            <div id="bar-divida" class="ratio-seg-divida" style="width: 33%;"></div>
+          </div>
+        </section>
 
-      <!-- Category Breakdown -->
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
-        <h3 class="text-sm font-semibold">Peso por Categoria (Mensalizado)</h3>
-        <div id="categorias-peso" class="space-y-2.5">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-    </main>
+        <!-- TAB 1: VISÃO GERAL -->
+        <main id="tab-visao" class="tab-panel">
+          <div class="grid-3">
+            <!-- DIA -->
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 class="section-title">Fluxo por Dia</h2>
+                <span class="pill">Base 30d</span>
+              </div>
+              <div class="metric-rows">
+                <div class="metric-row"><span class="text-muted">Entrada média/dia</span><span id="dia-receita" class="mono text-invest">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Custo fixo/dia</span><span id="dia-fixo" class="mono">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Gasto variável/dia</span><span id="dia-variavel" class="mono">R$ 0,00</span></div>
+                <div class="metric-row metric-row-total"><span>Líquido/dia</span><span id="dia-liquido" class="mono">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Teto seguro hoje</span><span id="dia-teto" class="mono" style="font-weight: 600;">R$ 0,00</span></div>
+              </div>
+            </div>
 
-    <!-- TAB 3: SALDOS & APIS -->
-    <main id="tab-saldos" class="tab-panel hidden space-y-5">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- Manual Accounts -->
-        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="text-sm font-semibold">Saldos Atuais (Contas e Cartões)</h2>
-              <p class="text-xs text-[var(--muted-foreground)]">Registre saldos positivos ou faturas/dívidas (negativos).</p>
+            <!-- MÊS -->
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 class="section-title">Fluxo do Mês</h2>
+                <span id="mes-atual-label" class="pill"></span>
+              </div>
+              <div class="metric-rows">
+                <div class="metric-row"><span class="text-muted">Receitas mensais</span><span id="mes-receita" class="mono text-invest">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Despesas fixas</span><span id="mes-fixo" class="mono">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Despesas variáveis</span><span id="mes-variavel" class="mono">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Provisão anual (1/12)</span><span id="mes-anual-rateio" class="mono">R$ 0,00</span></div>
+                <div class="metric-row metric-row-total"><span>Balanço mensal</span><span id="mes-liquido" class="mono">R$ 0,00</span></div>
+              </div>
+            </div>
+
+            <!-- ANO -->
+            <div class="card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 class="section-title">Projeção Anual</h2>
+                <span class="pill">12 meses</span>
+              </div>
+              <div class="metric-rows">
+                <div class="metric-row"><span class="text-muted">Receita anual</span><span id="ano-receita" class="mono text-invest">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Gasto mensal × 12</span><span id="ano-recorrente" class="mono">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Custos anuais avulsos</span><span id="ano-avulsos" class="mono">R$ 0,00</span></div>
+                <div class="metric-row metric-row-total"><span>Economia / Déficit</span><span id="ano-liquido" class="mono">R$ 0,00</span></div>
+                <div class="metric-row"><span class="text-muted">Patrimônio em 1 ano</span><span id="ano-patrimonio" class="mono" style="font-weight: 600;">R$ 0,00</span></div>
+              </div>
             </div>
           </div>
 
-          <form id="form-conta" class="grid grid-cols-1 sm:grid-cols-12 gap-2">
-            <input id="conta-nome" type="text" placeholder="Ex: Nubank, Itaú, Carteira" required class="sm:col-span-5 px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]" />
-            <select id="conta-tipo" class="sm:col-span-3 px-2 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
-              <option value="corrente">Conta Corrente</option>
-              <option value="reserva">Reserva / Invest.</option>
-              <option value="cartao">Fatura Cartão (-)</option>
-              <option value="dinheiro">Dinheiro / Pix</option>
-            </select>
-            <input id="conta-valor" type="number" step="0.01" placeholder="Valor R$" required class="sm:col-span-2 px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] tabular-nums" />
-            <button type="submit" class="sm:col-span-2 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer">
-              Salvar
-            </button>
-          </form>
-
-          <div id="contas-lista" class="divide-y divide-[var(--border)]">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-
-        <!-- API Integration Panel -->
-        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="text-sm font-semibold">Integração via API (Open Finance / REST)</h2>
-              <p class="text-xs text-[var(--muted-foreground)]">Conecte um endpoint JSON (Pluggy, Belvo, servidor próprio ou Apps Script) para puxar saldos e transações.</p>
-            </div>
-            <span id="api-status-badge" class="text-xs px-2 py-0.5 rounded border border-[var(--border)] text-[var(--muted-foreground)]">Desconectado</span>
-          </div>
-
-          <div class="space-y-3 text-xs">
-            <div>
-              <label class="block text-[var(--muted-foreground)] mb-1">URL do Endpoint (GET JSON)</label>
-              <input id="api-url" type="url" placeholder="https://sua-api.com/financeiro/resumo" class="w-full px-2.5 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-mono" />
-            </div>
-            <div>
-              <label class="block text-[var(--muted-foreground)] mb-1">Bearer Token / API Key (Opcional)</label>
-              <input id="api-token" type="password" placeholder="sk_live_..." class="w-full px-2.5 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-mono" />
+          <div class="grid-chart">
+            <div class="card">
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+                <div>
+                  <h3 class="section-title">Projeção de Patrimônio — 12 Meses</h3>
+                  <p class="section-sub">Sólida: ritmo atual · Tracejada: com cortes simulados</p>
+                </div>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="chart-projection"></canvas>
+                <div id="chart-tooltip" class="chart-tooltip hidden"></div>
+              </div>
             </div>
 
-            <div class="flex flex-wrap gap-2 pt-1">
-              <button id="btn-sync-api" class="px-3 py-1.5 font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer">
-                Sincronizar Agora
+            <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div>
+                  <h3 class="section-title">Meta de Economia Mensal</h3>
+                  <p class="section-sub">Quanto você quer guardar por mês?</p>
+                </div>
+                <div class="input-group">
+                  <span class="input-prefix">R$</span>
+                  <input id="input-meta-mensal" type="number" min="0" step="50" />
+                </div>
+                <div id="diagnostico-resumo" class="diag-box"></div>
+              </div>
+              <button data-goto-tab="cortes" class="btn btn-secondary" style="width: 100%;">
+                Abrir Simulador de Cortes &rarr;
               </button>
-              <button id="btn-demo-api" class="px-3 py-1.5 font-medium rounded-md bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] hover:opacity-90 cursor-pointer">
-                Testar com Resposta Simulada
-              </button>
             </div>
-
-            <div id="api-log" class="p-2.5 rounded-md bg-[var(--background)] border border-[var(--border)] font-mono text-xs text-[var(--muted-foreground)] whitespace-pre-wrap">Aguardando sincronização...</div>
-
-            <details class="pt-1">
-              <summary class="cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Ver formato JSON esperado pela API</summary>
-              <pre class="mt-2 p-2.5 rounded-md bg-[var(--background)] border border-[var(--border)] font-mono text-xs overflow-x-auto">{
-  "accounts": [
-    { "name": "Banco Inter", "type": "corrente", "balance": 4250.80 },
-    { "name": "Cartão Nubank", "type": "cartao", "balance": -1180.00 }
-  ],
-  "transactions": [
-    { "title": "Salário", "type": "receita", "freq": "mensal", "amount": 6500, "category": "Renda", "cuttable": false },
-    { "title": "Delivery", "type": "despesa", "freq": "mensal", "amount": 620, "category": "Alimentação", "cuttable": true }
-  ]
-}</pre>
-            </details>
           </div>
-        </div>
-      </div>
-    </main>
+        </main>
 
-    <!-- TAB 4: LANÇAMENTOS & METAS (ADICIONANDO COM O TEMPO) -->
-    <main id="tab-historico" class="tab-panel hidden space-y-5">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <!-- Transactions List -->
-        <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h2 class="text-sm font-semibold">Lançamentos Registrados</h2>
-            <div class="flex items-center gap-2">
-              <input id="filtro-busca" type="text" placeholder="Buscar..." class="px-2.5 py-1 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]" />
-              <select id="filtro-tipo" class="px-2 py-1 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
-                <option value="todos">Todos</option>
-                <option value="receita">Receitas</option>
-                <option value="despesa">Despesas</option>
+        <!-- TAB 2: SALDO, DÍVIDAS & INVESTIMENTOS -->
+        <main id="tab-patrimonio" class="tab-panel hidden">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
+            <div class="seg-tabs" role="tablist" aria-label="Categorias patrimoniais">
+              <button type="button" data-subtab="saldo" class="seg-btn active">Saldo em Contas</button>
+              <button type="button" data-subtab="dividas" class="seg-btn">Dívidas &amp; Faturas</button>
+              <button type="button" data-subtab="investimentos" class="seg-btn">Investimentos</button>
+              <button type="button" data-subtab="api" class="seg-btn">Integração API</button>
+            </div>
+            <div style="font-size: 0.78rem;" class="text-muted">
+              Tudo sincronizado com seu Patrimônio Líquido em tempo real.
+            </div>
+          </div>
+
+          <!-- Subtab: Saldo -->
+          <div id="subtab-saldo" class="card subtab-panel" style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <h2 class="section-title">Contas Bancárias &amp; Dinheiro (Saldo)</h2>
+              <p class="section-sub">Registre contas correntes, carteiras digitais e dinheiro disponível.</p>
+            </div>
+            <form id="form-saldo" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px;">
+              <input id="saldo-nome" type="text" placeholder="Ex: Nubank, Itaú, Carteira" required class="input" />
+              <select id="saldo-tipo" class="select">
+                <option value="corrente">Conta Corrente</option>
+                <option value="dinheiro">Dinheiro / Pix</option>
               </select>
-            </div>
+              <input id="saldo-valor" type="number" step="0.01" placeholder="Saldo R$" required class="input mono" />
+              <button type="submit" class="btn btn-primary">+ Adicionar Saldo</button>
+            </form>
+            <div id="lista-saldos" class="list-divide"></div>
           </div>
 
-          <div id="lancamentos-lista" class="divide-y divide-[var(--border)] max-h-[460px] overflow-y-auto">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-
-        <!-- Future Goals / Adding over time -->
-        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-4">
-          <div>
-            <h2 class="text-sm font-semibold">Metas &amp; Planos Futuros</h2>
-            <p class="text-xs text-[var(--muted-foreground)]">Adicione objetivos ao longo do tempo para ver em quantos dias/meses você alcança.</p>
-          </div>
-          <form id="form-meta" class="space-y-2">
-            <input id="meta-nome" type="text" placeholder="Ex: Reserva de emergência, Viagem" required class="w-full px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]" />
-            <div class="flex gap-2">
-              <input id="meta-valor" type="number" min="1" step="0.01" placeholder="Valor alvo R$" required class="w-full px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] tabular-nums" />
-              <button type="submit" class="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 whitespace-nowrap cursor-pointer">
-                + Meta
-              </button>
+          <!-- Subtab: Dívidas -->
+          <div id="subtab-dividas" class="card subtab-panel hidden" style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <h2 class="section-title">Dívidas, Faturas &amp; Financiamentos</h2>
+              <p class="section-sub">Adicione faturas de cartão, empréstimos ou parcelas. O valor será subtraído do patrimônio.</p>
             </div>
-          </form>
-          <div id="metas-lista" class="space-y-2.5">
-            <!-- Populated by JS -->
+            <form id="form-divida" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
+              <input id="divida-nome" type="text" placeholder="Ex: Cartão Black, Empréstimo" required class="input" />
+              <select id="divida-tipo" class="select">
+                <option value="cartao">Fatura de Cartão</option>
+                <option value="emprestimo">Empréstimo</option>
+                <option value="financiamento">Financiamento</option>
+                <option value="divida">Outra Dívida</option>
+              </select>
+              <input id="divida-valor" type="number" min="0.01" step="0.01" placeholder="Valor devido R$" required class="input mono" />
+              <input id="divida-obs" type="text" placeholder="Juros / Parcelas (opcional)" class="input" />
+              <button type="submit" class="btn btn-primary" style="background: var(--divida); color: #fff;">+ Registrar Dívida</button>
+            </form>
+            <div id="lista-dividas" class="list-divide"></div>
           </div>
-        </div>
+
+          <!-- Subtab: Investimentos -->
+          <div id="subtab-investimentos" class="card subtab-panel hidden" style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <h2 class="section-title">Investimentos &amp; Reservas</h2>
+              <p class="section-sub">Acompanhe CDBs, Tesouro, Ações, FIIs, Cripto e reserva de emergência.</p>
+            </div>
+            <form id="form-invest" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
+              <input id="invest-nome" type="text" placeholder="Ex: Tesouro Selic, CDB 100%" required class="input" />
+              <select id="invest-tipo" class="select">
+                <option value="reserva">Reserva / Renda Fixa</option>
+                <option value="acoes">Ações / FIIs</option>
+                <option value="cripto">Criptomoedas</option>
+                <option value="previdencia">Previdência</option>
+              </select>
+              <input id="invest-valor" type="number" min="0.01" step="0.01" placeholder="Valor aplicado R$" required class="input mono" />
+              <input id="invest-obs" type="text" placeholder="Rentabilidade (ex: 100% CDI)" class="input" />
+              <button type="submit" class="btn btn-primary">+ Adicionar Investimento</button>
+            </form>
+            <div id="lista-investimentos" class="list-divide"></div>
+          </div>
+
+          <!-- Subtab: API -->
+          <div id="subtab-api" class="card subtab-panel hidden" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <div>
+                <h2 class="section-title">Integração via API (Open Finance / REST)</h2>
+                <p class="section-sub">Conecte um endpoint JSON para atualizar saldos, dívidas e investimentos.</p>
+              </div>
+              <span id="api-status-badge" class="pill">Desconectado</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+              <div>
+                <label class="label" for="api-url">URL do Endpoint (GET JSON)</label>
+                <input id="api-url" type="url" placeholder="https://sua-api.com/financeiro/resumo" class="input mono" />
+              </div>
+              <div>
+                <label class="label" for="api-token">Bearer Token / API Key (Opcional)</label>
+                <input id="api-token" type="password" placeholder="sk_live_..." class="input mono" />
+              </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <button id="btn-sync-api" class="btn btn-primary">Sincronizar Agora</button>
+              <button id="btn-demo-api" class="btn btn-secondary">Testar com Resposta Simulada</button>
+            </div>
+            <div id="api-log" class="api-log">Aguardando sincronização...</div>
+          </div>
+        </main>
+
+        <!-- TAB 3: SIMULADOR DE CORTES -->
+        <main id="tab-cortes" class="tab-panel hidden">
+          <div class="card" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+              <div>
+                <h2 class="section-title">Diagnóstico: O que devo diminuir?</h2>
+                <p class="section-sub">Simule cortes para acelerar o pagamento de dívidas ou aumentar aportes em investimentos.</p>
+              </div>
+              <button id="btn-reset-sim" class="btn btn-ghost">Zerar Simulação</button>
+            </div>
+
+            <div class="sim-banner">
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Economia Simulada / Mês</div>
+                <div id="sim-eco-mes" class="mono text-invest" style="font-size: 1.15rem; font-weight: 700;">R$ 0,00</div>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Ganho por Dia</div>
+                <div id="sim-eco-dia" class="mono" style="font-size: 1.15rem; font-weight: 700;">+ R$ 0,00/dia</div>
+              </div>
+              <div>
+                <div class="text-muted" style="font-size: 0.75rem;">Novo Balanço Anual</div>
+                <div id="sim-novo-ano" class="mono" style="font-size: 1.15rem; font-weight: 700;">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div id="cortes-lista" class="list-divide"></div>
+          </div>
+
+          <div class="card" style="display: flex; flex-direction: column; gap: 12px;">
+            <h3 class="section-title">Peso por Categoria (Mensalizado)</h3>
+            <div id="categorias-peso" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          </div>
+        </main>
+
+        <!-- TAB 4: LANÇAMENTOS & METAS -->
+        <main id="tab-historico" class="tab-panel hidden">
+          <div class="grid-chart">
+            <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+                <h2 class="section-title">Lançamentos Registrados</h2>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <input id="filtro-busca" type="text" placeholder="Buscar..." class="input" style="width: 180px;" />
+                  <select id="filtro-tipo" class="select" style="width: auto;">
+                    <option value="todos">Todos</option>
+                    <option value="receita">Receitas</option>
+                    <option value="despesa">Despesas</option>
+                  </select>
+                </div>
+              </div>
+              <div id="lancamentos-lista" class="list-divide" style="max-height: 460px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="card" style="display: flex; flex-direction: column; gap: 14px;">
+              <div>
+                <h2 class="section-title">Metas &amp; Objetivos</h2>
+                <p class="section-sub">Estime em quantos meses você alcança seus planos.</p>
+              </div>
+              <form id="form-meta" style="display: flex; flex-direction: column; gap: 8px;">
+                <input id="meta-nome" type="text" placeholder="Ex: Quitar dívida, Viagem" required class="input" />
+                <div style="display: flex; gap: 8px;">
+                  <input id="meta-valor" type="number" min="1" step="0.01" placeholder="Valor alvo R$" required class="input mono" />
+                  <button type="submit" class="btn btn-primary">+ Meta</button>
+                </div>
+              </form>
+              <div id="metas-lista" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+          </div>
+        </main>
       </div>
-    </main>
-
+    </div>
   </div>
 
   <!-- Modal: Novo Lançamento -->
-  <div id="modal-lancamento" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
-    <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg w-full max-w-md p-5 space-y-4 shadow-xl">
-      <div class="flex items-center justify-between">
-        <h3 class="text-sm font-semibold">Adicionar Lançamento</h3>
-        <button id="btn-close-modal" class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer">Fechar ✕</button>
+  <div id="modal-lancamento" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 id="modal-title" class="section-title" style="font-size: 1rem;">Adicionar Lançamento</h3>
+        <button id="btn-close-modal" class="del-btn" aria-label="Fechar modal">✕</button>
       </div>
-      <form id="form-lancamento" class="space-y-3 text-xs">
+      <form id="form-lancamento" style="display: flex; flex-direction: column; gap: 12px;">
         <div>
-          <label class="block text-[var(--muted-foreground)] mb-1">Descrição</label>
-          <input id="lanc-titulo" type="text" placeholder="Ex: Salário, Mercado, Netflix, Uber" required class="w-full px-2.5 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]" />
+          <label class="label" for="lanc-titulo">Descrição</label>
+          <input id="lanc-titulo" type="text" placeholder="Ex: Salário, Mercado, Netflix, Uber" required class="input" />
         </div>
-        <div class="grid grid-cols-2 gap-2">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div>
-            <label class="block text-[var(--muted-foreground)] mb-1">Tipo</label>
-            <select id="lanc-tipo" class="w-full px-2 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+            <label class="label" for="lanc-tipo">Tipo</label>
+            <select id="lanc-tipo" class="select">
               <option value="despesa">Despesa (-)</option>
               <option value="receita">Receita (+)</option>
             </select>
           </div>
           <div>
-            <label class="block text-[var(--muted-foreground)] mb-1">Valor (R$)</label>
-            <input id="lanc-valor" type="number" min="0.01" step="0.01" placeholder="0,00" required class="w-full px-2.5 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] tabular-nums" />
+            <label class="label" for="lanc-valor">Valor (R$)</label>
+            <input id="lanc-valor" type="number" min="0.01" step="0.01" placeholder="0,00" required class="input mono" />
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-2">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
           <div>
-            <label class="block text-[var(--muted-foreground)] mb-1">Frequência</label>
-            <select id="lanc-freq" class="w-full px-2 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+            <label class="label" for="lanc-freq">Frequência</label>
+            <select id="lanc-freq" class="select">
               <option value="mensal">Mensal (Fixo/Recorrente)</option>
               <option value="diario">Diário (Todos os dias)</option>
               <option value="semanal">Semanal</option>
@@ -455,40 +1181,73 @@
             </select>
           </div>
           <div>
-            <label class="block text-[var(--muted-foreground)] mb-1">Categoria</label>
-            <select id="lanc-cat" class="w-full px-2 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+            <label class="label" for="lanc-cat">Categoria</label>
+            <select id="lanc-cat" class="select">
               <option value="Moradia">Moradia</option>
               <option value="Alimentação">Alimentação</option>
               <option value="Transporte">Transporte</option>
               <option value="Assinaturas">Assinaturas &amp; Apps</option>
               <option value="Lazer">Lazer &amp; Compras</option>
               <option value="Saúde">Saúde</option>
+              <option value="Dívidas">Pagamento de Dívidas</option>
+              <option value="Investimentos">Aporte em Investimentos</option>
               <option value="Renda">Renda / Salário</option>
               <option value="Outros">Outros</option>
             </select>
           </div>
         </div>
-        <label class="flex items-center gap-2 pt-1 cursor-pointer">
-          <input id="lanc-cortavel" type="checkbox" checked class="accent-[var(--primary)]" />
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
+          <input id="lanc-cortavel" type="checkbox" checked style="accent-color: var(--primary); width: 15px; height: 15px;" />
           <span>Este gasto pode ser reduzido/cortado se necessário</span>
         </label>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" id="btn-cancel-modal" class="px-3 py-1.5 rounded-md border border-[var(--border)] text-[var(--muted-foreground)] cursor-pointer">Cancelar</button>
-          <button type="submit" class="px-4 py-1.5 font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer">Adicionar</button>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; padding-top: 6px;">
+          <button type="button" id="btn-cancel-modal" class="btn btn-ghost">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Adicionar</button>
         </div>
       </form>
     </div>
   </div>
 
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
   <script>
     const STORAGE_KEY = 'fluxo_financeiro_v1';
+    const THEME_KEY = 'fluxo_theme_v1';
+
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      applyTheme(saved ? saved === 'dark' : prefersDark);
+    }
+
+    function applyTheme(isDark) {
+      document.documentElement.classList.toggle('dark', isDark);
+      document.getElementById('icon-sun').classList.toggle('hidden', !isDark);
+      document.getElementById('icon-moon').classList.toggle('hidden', isDark);
+    }
+
+    document.getElementById('btn-theme').addEventListener('click', () => {
+      const nextDark = !document.documentElement.classList.contains('dark');
+      applyTheme(nextDark);
+      localStorage.setItem(THEME_KEY, nextDark ? 'dark' : 'light');
+      drawChart(computeMetrics());
+    });
+
+    function showToast(msg) {
+      const c = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      c.appendChild(el);
+      setTimeout(() => el.remove(), 2500);
+    }
 
     const defaultState = {
       metaMensal: 800,
       accounts: [
         { id: 'acc1', name: 'Conta Principal', type: 'corrente', balance: 3450.00 },
-        { id: 'acc2', name: 'Reserva / CDB', type: 'reserva', balance: 8200.00 },
-        { id: 'acc3', name: 'Fatura Cartão', type: 'cartao', balance: -1240.00 }
+        { id: 'acc2', name: 'Reserva / CDB', type: 'reserva', balance: 8200.00, note: '100% CDI' },
+        { id: 'acc3', name: 'Fatura Cartão', type: 'cartao', balance: -1240.00, note: 'Vence dia 10' }
       ],
       transactions: [
         { id: 'tx1', title: 'Salário / Pró-labore', type: 'receita', freq: 'mensal', amount: 5800, category: 'Renda', cuttable: false, createdAt: '2026-11-01' },
@@ -503,7 +1262,7 @@
         { id: 'g1', name: 'Reserva de 6 meses', target: 20000 }
       ],
       apiConfig: { url: '', token: '', lastSync: null },
-      cutSimulations: {} // { txId: percentCut (0-100) }
+      cutSimulations: {}
     };
 
     let state = loadState();
@@ -512,8 +1271,7 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return structuredClone(defaultState);
-        const parsed = JSON.parse(raw);
-        return { ...structuredClone(defaultState), ...parsed };
+        return { ...structuredClone(defaultState), ...JSON.parse(raw) };
       } catch {
         return structuredClone(defaultState);
       }
@@ -524,6 +1282,14 @@
     }
 
     const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+
+    function classifyAccount(acc) {
+      const debtTypes = ['cartao', 'emprestimo', 'financiamento', 'divida'];
+      const investTypes = ['reserva', 'acoes', 'cripto', 'previdencia', 'investimento'];
+      if (debtTypes.includes(acc.type) || acc.balance < 0) return 'divida';
+      if (investTypes.includes(acc.type)) return 'investimento';
+      return 'saldo';
+    }
 
     function monthlyEquivalent(tx) {
       const val = Number(tx.amount) || 0;
@@ -538,7 +1304,27 @@
     }
 
     function computeMetrics() {
-      const saldoAtual = state.accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+      let totalSaldo = 0;
+      let totalDividas = 0;
+      let totalInvest = 0;
+      let countSaldo = 0, countDivida = 0, countInvest = 0;
+
+      state.accounts.forEach(acc => {
+        const val = Number(acc.balance) || 0;
+        const group = classifyAccount(acc);
+        if (group === 'divida') {
+          totalDividas += Math.abs(val);
+          countDivida++;
+        } else if (group === 'investimento') {
+          totalInvest += val;
+          countInvest++;
+        } else {
+          totalSaldo += val;
+          countSaldo++;
+        }
+      });
+
+      const saldoAtual = totalSaldo + totalInvest - totalDividas;
 
       let recMensal = 0;
       let despFixaMensal = 0;
@@ -559,9 +1345,7 @@
             despVarMensal += m;
           }
           const cutPct = state.cutSimulations[tx.id] || 0;
-          if (cutPct > 0) {
-            economiaSimuladaMes += m * (cutPct / 100);
-          }
+          if (cutPct > 0) economiaSimuladaMes += m * (cutPct / 100);
         }
       });
 
@@ -574,7 +1358,6 @@
       const varDia = (despVarMensal + rateioAnualMes) / 30;
       const liquidoDia = liquidoMensal / 30;
 
-      // Teto seguro hoje: quanto sobra por dia depois de pagar fixos + meta mensal
       const meta = Number(state.metaMensal) || 0;
       const tetoSeguroHoje = (recMensal - despFixaMensal - rateioAnualMes - meta) / 30;
 
@@ -582,10 +1365,11 @@
       const despRecorrenteAnual = (despFixaMensal + despVarMensal) * 12;
       const liquidoAnual = liquidoMensal * 12;
       const patrimonio1Ano = saldoAtual + liquidoAnual;
-
       const faltaParaMeta = meta - liquidoMensal;
 
       return {
+        totalSaldo, totalDividas, totalInvest,
+        countSaldo, countDivida, countInvest,
         saldoAtual,
         recMensal, despFixaMensal, despVarMensal, rateioAnualMes, despTotalMensal, liquidoMensal,
         recDia, fixoDia, varDia, liquidoDia, tetoSeguroHoje,
@@ -597,83 +1381,146 @@
     function renderAll() {
       const m = computeMetrics();
 
-      // Month label
-      const now = new Date();
-      document.getElementById('mes-atual-label').textContent = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      document.getElementById('mes-atual-label').textContent = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      document.getElementById('badge-cortes').textContent = state.transactions.filter(t => t.type === 'despesa' && t.cuttable).length;
+      document.getElementById('badge-contas').textContent = state.accounts.length;
+      document.getElementById('badge-lancamentos').textContent = state.transactions.length;
 
-      // KPIs
-      const kpiSaldo = document.getElementById('kpi-saldo');
-      kpiSaldo.textContent = fmt(m.saldoAtual);
-      kpiSaldo.className = `text-lg font-semibold tabular-nums mt-1 ${m.saldoAtual >= 0 ? 'text-[var(--foreground)]' : 'text-[var(--error)]'}`;
-      document.getElementById('kpi-saldo-sub').textContent = `${state.accounts.length} conta(s) registrada(s)`;
+      // 4 Pillars
+      document.getElementById('kpi-saldo-contas').textContent = fmt(m.totalSaldo);
+      document.getElementById('kpi-saldo-sub').textContent = `${m.countSaldo} conta(s) em liquidez`;
 
-      const kpiDia = document.getElementById('kpi-dia');
-      kpiDia.textContent = fmt(m.liquidoDia);
-      kpiDia.className = `text-lg font-semibold tabular-nums mt-1 ${m.liquidoDia >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
-      document.getElementById('kpi-dia-sub').textContent = `Teto seguro/dia: ${fmt(m.tetoSeguroHoje)}`;
+      document.getElementById('kpi-dividas').textContent = fmt(m.totalDividas);
+      document.getElementById('kpi-dividas-sub').textContent = `${m.countDivida} dívida(s) / fatura(s)`;
 
-      const kpiMes = document.getElementById('kpi-mes');
-      kpiMes.textContent = fmt(m.liquidoMensal);
-      kpiMes.className = `text-lg font-semibold tabular-nums mt-1 ${m.liquidoMensal >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
-      document.getElementById('kpi-mes-sub').textContent = `Gasto total: ${fmt(m.despTotalMensal)}`;
+      document.getElementById('kpi-invest').textContent = fmt(m.totalInvest);
+      document.getElementById('kpi-invest-sub').textContent = `${m.countInvest} aplicação(ões)`;
 
-      const kpiAno = document.getElementById('kpi-ano');
-      kpiAno.textContent = fmt(m.patrimonio1Ano);
-      kpiAno.className = `text-lg font-semibold tabular-nums mt-1 ${m.patrimonio1Ano >= m.saldoAtual ? 'text-[var(--foreground)]' : 'text-[var(--warning)]'}`;
-      document.getElementById('kpi-ano-sub').textContent = `Variação anual: ${m.liquidoAnual >= 0 ? '+' : ''}${fmt(m.liquidoAnual)}`;
+      const patEl = document.getElementById('kpi-patrimonio');
+      patEl.textContent = fmt(m.saldoAtual);
+      patEl.className = `pillar-val ${m.saldoAtual >= 0 ? '' : 'text-divida'}`;
+      document.getElementById('kpi-patrimonio-sub').textContent = `Em 1 ano: ${fmt(m.patrimonio1Ano)}`;
 
-      // Dia card
+      // Composition Bar
+      const gross = Math.max(1, Math.max(0, m.totalSaldo) + Math.max(0, m.totalInvest) + m.totalDividas);
+      const pSaldo = Math.round((Math.max(0, m.totalSaldo) / gross) * 100);
+      const pInvest = Math.round((Math.max(0, m.totalInvest) / gross) * 100);
+      const pDivida = Math.max(0, 100 - pSaldo - pInvest);
+      document.getElementById('pct-saldo').textContent = `${pSaldo}%`;
+      document.getElementById('pct-invest').textContent = `${pInvest}%`;
+      document.getElementById('pct-divida').textContent = `${pDivida}%`;
+      document.getElementById('bar-saldo').style.width = `${pSaldo}%`;
+      document.getElementById('bar-invest').style.width = `${pInvest}%`;
+      document.getElementById('bar-divida').style.width = `${pDivida}%`;
+
+      // Dia / Mês / Ano
       document.getElementById('dia-receita').textContent = fmt(m.recDia);
       document.getElementById('dia-fixo').textContent = fmt(m.fixoDia);
       document.getElementById('dia-variavel').textContent = fmt(m.varDia);
-      const diaLiqEl = document.getElementById('dia-liquido');
-      diaLiqEl.textContent = fmt(m.liquidoDia);
-      diaLiqEl.className = `font-mono tabular-nums ${m.liquidoDia >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+      const diaLiq = document.getElementById('dia-liquido');
+      diaLiq.textContent = fmt(m.liquidoDia);
+      diaLiq.className = `mono ${m.liquidoDia >= 0 ? 'text-invest' : 'text-divida'}`;
       document.getElementById('dia-teto').textContent = fmt(m.tetoSeguroHoje);
 
-      // Mês card
       document.getElementById('mes-receita').textContent = fmt(m.recMensal);
       document.getElementById('mes-fixo').textContent = fmt(m.despFixaMensal);
       document.getElementById('mes-variavel').textContent = fmt(m.despVarMensal);
       document.getElementById('mes-anual-rateio').textContent = fmt(m.rateioAnualMes);
-      const mesLiqEl = document.getElementById('mes-liquido');
-      mesLiqEl.textContent = fmt(m.liquidoMensal);
-      mesLiqEl.className = `font-mono tabular-nums ${m.liquidoMensal >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+      const mesLiq = document.getElementById('mes-liquido');
+      mesLiq.textContent = fmt(m.liquidoMensal);
+      mesLiq.className = `mono ${m.liquidoMensal >= 0 ? 'text-invest' : 'text-divida'}`;
 
-      // Ano card
       document.getElementById('ano-receita').textContent = fmt(m.recAnual);
       document.getElementById('ano-recorrente').textContent = fmt(m.despRecorrenteAnual);
       document.getElementById('ano-avulsos').textContent = fmt(m.despAnualAvulsa);
-      const anoLiqEl = document.getElementById('ano-liquido');
-      anoLiqEl.textContent = fmt(m.liquidoAnual);
-      anoLiqEl.className = `font-mono tabular-nums ${m.liquidoAnual >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+      const anoLiq = document.getElementById('ano-liquido');
+      anoLiq.textContent = fmt(m.liquidoAnual);
+      anoLiq.className = `mono ${m.liquidoAnual >= 0 ? 'text-invest' : 'text-divida'}`;
       document.getElementById('ano-patrimonio').textContent = fmt(m.patrimonio1Ano);
 
-      // Meta input & diagnóstico
+      // Meta diagnóstico
       document.getElementById('input-meta-mensal').value = state.metaMensal;
       const diagEl = document.getElementById('diagnostico-resumo');
       if (m.liquidoMensal < 0) {
-        diagEl.innerHTML = `
-          <div class="font-medium text-[var(--error)]">Atenção: Déficit mensal de ${fmt(Math.abs(m.liquidoMensal))}</div>
-          <div class="text-[var(--muted-foreground)]">Você precisa reduzir pelo menos <strong class="text-[var(--foreground)]">${fmt(Math.abs(m.liquidoMensal) / 30)}/dia</strong> para empatar, ou <strong class="text-[var(--foreground)]">${fmt(m.faltaParaMeta)}/mês</strong> para atingir sua meta.</div>
-        `;
+        diagEl.className = 'diag-box is-error';
+        diagEl.innerHTML = `<div class="text-divida" style="font-weight: 700;">Déficit de ${fmt(Math.abs(m.liquidoMensal))}/mês</div><div class="text-muted">Reduza ${fmt(Math.abs(m.liquidoMensal) / 30)}/dia para empatar.</div>`;
       } else if (m.faltaParaMeta > 0) {
-        diagEl.innerHTML = `
-          <div class="font-medium text-[var(--warning)]">Faltam ${fmt(m.faltaParaMeta)}/mês para sua meta</div>
-          <div class="text-[var(--muted-foreground)]">Você está no azul (+${fmt(m.liquidoMensal)}/mês), mas precisa diminuir <strong class="text-[var(--foreground)]">${fmt(m.faltaParaMeta / 30)}/dia</strong> para guardar ${fmt(m.meta)}/mês.</div>
-        `;
+        diagEl.className = 'diag-box is-warning';
+        diagEl.innerHTML = `<div class="text-warning" style="font-weight: 700;">Faltam ${fmt(m.faltaParaMeta)}/mês para a meta</div><div class="text-muted">Corte ${fmt(m.faltaParaMeta / 30)}/dia para guardar ${fmt(m.meta)}/mês.</div>`;
       } else {
-        diagEl.innerHTML = `
-          <div class="font-medium text-[var(--success)]">Meta mensal atingida!</div>
-          <div class="text-[var(--muted-foreground)]">Sobra projetada de <strong class="text-[var(--foreground)]">${fmt(m.liquidoMensal)}/mês</strong> (${fmt(m.liquidoMensal * 12)}/ano).</div>
-        `;
+        diagEl.className = 'diag-box is-success';
+        diagEl.innerHTML = `<div class="text-invest" style="font-weight: 700;">Meta atingida!</div><div class="text-muted">Sobra de ${fmt(m.liquidoMensal)}/mês para quitar dívidas ou investir.</div>`;
       }
 
+      renderPatrimonioLists();
       renderCortes(m);
-      renderContas();
       renderLancamentos();
       renderMetas(m);
       drawChart(m);
+    }
+
+    function renderPatrimonioLists() {
+      const typeLabels = {
+        corrente: 'Conta Corrente',
+        dinheiro: 'Dinheiro / Pix',
+        cartao: 'Fatura de Cartão',
+        emprestimo: 'Empréstimo',
+        financiamento: 'Financiamento',
+        divida: 'Outra Dívida',
+        reserva: 'Reserva / Renda Fixa',
+        acoes: 'Ações / FIIs',
+        cripto: 'Criptomoedas',
+        previdencia: 'Previdência',
+        investimento: 'Investimento'
+      };
+
+      const renderGroup = (containerId, groupName, emptyMsg, pillClass) => {
+        const el = document.getElementById(containerId);
+        const items = state.accounts.filter(a => classifyAccount(a) === groupName);
+        if (items.length === 0) {
+          el.innerHTML = `<div style="padding: 18px 0; text-align: center; font-size: 0.8rem;" class="text-muted">${emptyMsg}</div>`;
+          return;
+        }
+        el.innerHTML = items.map(acc => `
+          <div class="list-row">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(acc.name)}</span>
+                <span class="pill ${pillClass}">${typeLabels[acc.type] || acc.type}</span>
+              </div>
+              ${acc.note ? `<div class="text-muted" style="font-size: 0.74rem; margin-top: 2px;">${escapeHtml(acc.note)}</div>` : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="mono ${groupName === 'divida' ? 'text-divida' : groupName === 'investimento' ? 'text-invest' : 'text-saldo'}" style="font-weight: 700; font-size: 0.88rem;">
+                ${groupName === 'divida' ? fmt(Math.abs(acc.balance)) : fmt(acc.balance)}
+              </span>
+              <button data-del-acc="${acc.id}" class="del-btn" title="Remover">✕</button>
+            </div>
+          </div>
+        `).join('');
+
+        el.querySelectorAll('button[data-del-acc]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-del-acc');
+            state.accounts = state.accounts.filter(a => a.id !== id);
+            saveState();
+            renderAll();
+            showToast('Registro removido');
+          });
+        });
+      };
+
+      renderGroup('lista-saldos', 'saldo', 'Nenhuma conta de saldo registrada.', 'pill-saldo');
+      renderGroup('lista-dividas', 'divida', 'Nenhuma dívida ou fatura registrada.', 'pill-error');
+      renderGroup('lista-investimentos', 'investimento', 'Nenhum investimento registrado.', 'pill-success');
+
+      document.getElementById('api-url').value = state.apiConfig.url || '';
+      document.getElementById('api-token').value = state.apiConfig.token || '';
+      if (state.apiConfig.lastSync) {
+        const badge = document.getElementById('api-status-badge');
+        badge.textContent = 'Sincronizado';
+        badge.className = 'pill pill-success';
+      }
     }
 
     function renderCortes(m) {
@@ -682,7 +1529,7 @@
       const novoAno = m.liquidoAnual + (m.economiaSimuladaMes * 12);
       const novoAnoEl = document.getElementById('sim-novo-ano');
       novoAnoEl.textContent = fmt(novoAno);
-      novoAnoEl.className = `text-base font-semibold tabular-nums mt-0.5 ${novoAno >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+      novoAnoEl.className = `mono ${novoAno >= 0 ? 'text-invest' : 'text-divida'}`;
 
       const expenses = state.transactions
         .filter(t => t.type === 'despesa')
@@ -691,31 +1538,28 @@
 
       const lista = document.getElementById('cortes-lista');
       if (expenses.length === 0) {
-        lista.innerHTML = `<div class="py-6 text-center text-xs text-[var(--muted-foreground)]">Nenhuma despesa cadastrada ainda.</div>`;
+        lista.innerHTML = `<div style="padding: 24px 0; text-align: center; font-size: 0.8rem;" class="text-muted">Nenhuma despesa cadastrada.</div>`;
       } else {
         lista.innerHTML = expenses.map(tx => {
           const cutPct = state.cutSimulations[tx.id] || 0;
           const saved = tx.monthly * (cutPct / 100);
           return `
-            <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div class="space-y-0.5">
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-medium">${escapeHtml(tx.title)}</span>
-                  <span class="text-xs px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--muted-foreground)]">${tx.category}</span>
-                  ${tx.cuttable
-                    ? `<span class="text-xs text-[var(--warning)]">Cortável</span>`
-                    : `<span class="text-xs text-[var(--muted-foreground)]">Essencial/Fixo</span>`}
+            <div class="list-row-cut">
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(tx.title)}</span>
+                  <span class="pill">${escapeHtml(tx.category)}</span>
+                  ${tx.cuttable ? `<span class="pill pill-warning">Cortável</span>` : `<span class="pill">Essencial</span>`}
                 </div>
-                <div class="text-xs text-[var(--muted-foreground)] tabular-nums">
-                  ${fmt(tx.monthly)}/mês (${fmt(tx.monthly / 30)}/dia)
-                </div>
+                <div class="text-muted mono" style="font-size: 0.75rem; margin-top: 2px;">${fmt(tx.monthly)}/mês · ${fmt(tx.monthly / 30)}/dia</div>
               </div>
-              <div class="flex items-center gap-3">
-                <input type="range" min="0" max="100" step="10" value="${cutPct}" data-cut-id="${tx.id}" class="w-28 accent-[var(--primary)] cursor-pointer" />
-                <span class="text-xs font-mono tabular-nums w-10 text-right">${cutPct}%</span>
-                <span class="text-xs font-mono tabular-nums w-24 text-right ${saved > 0 ? 'text-[var(--success)] font-medium' : 'text-[var(--muted-foreground)]'}">
-                  ${saved > 0 ? `- ${fmt(saved)}` : '—'}
-                </span>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 4px;">
+                  ${[0, 25, 50, 100].map(p => `<button type="button" data-quick-cut="${tx.id}" data-pct="${p}" class="quick-cut-btn ${cutPct === p ? 'active' : ''}">${p}%</button>`).join('')}
+                </div>
+                <input type="range" min="0" max="100" step="5" value="${cutPct}" data-cut-id="${tx.id}" class="cut-slider" />
+                <span class="mono" style="width: 36px; text-align: right; font-size: 0.78rem;">${cutPct}%</span>
+                <span class="mono ${saved > 0 ? 'text-invest' : 'text-muted'}" style="width: 92px; text-align: right; font-size: 0.8rem; font-weight: 600;">${saved > 0 ? `- ${fmt(saved)}` : '—'}</span>
               </div>
             </div>
           `;
@@ -723,78 +1567,42 @@
 
         lista.querySelectorAll('input[data-cut-id]').forEach(inp => {
           inp.addEventListener('input', (e) => {
-            const id = e.target.getAttribute('data-cut-id');
-            state.cutSimulations[id] = Number(e.target.value);
+            state.cutSimulations[e.target.getAttribute('data-cut-id')] = Number(e.target.value);
+            saveState();
+            renderAll();
+          });
+        });
+        lista.querySelectorAll('button[data-quick-cut]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.cutSimulations[btn.getAttribute('data-quick-cut')] = Number(btn.getAttribute('data-pct'));
             saveState();
             renderAll();
           });
         });
       }
 
-      // Category weights
       const byCat = {};
       let totalDesp = 0;
       expenses.forEach(tx => {
         byCat[tx.category] = (byCat[tx.category] || 0) + tx.monthly;
         totalDesp += tx.monthly;
       });
-      const catEl = document.getElementById('categorias-peso');
       const sortedCats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-      if (sortedCats.length === 0) {
-        catEl.innerHTML = `<div class="text-xs text-[var(--muted-foreground)]">Sem dados de categorias.</div>`;
-      } else {
-        catEl.innerHTML = sortedCats.map(([cat, val]) => {
-          const pct = totalDesp > 0 ? Math.round((val / totalDesp) * 100) : 0;
-          return `
-            <div class="space-y-1">
-              <div class="flex justify-between text-xs">
-                <span>${escapeHtml(cat)}</span>
-                <span class="font-mono tabular-nums">${fmt(val)}/mês (${pct}%)</span>
+      const catEl = document.getElementById('categorias-peso');
+      catEl.innerHTML = sortedCats.length === 0
+        ? `<div class="text-muted" style="font-size: 0.8rem;">Sem dados de categorias.</div>`
+        : sortedCats.map(([cat, val]) => {
+            const pct = totalDesp > 0 ? Math.round((val / totalDesp) * 100) : 0;
+            return `
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+                  <span style="font-weight: 600;">${escapeHtml(cat)}</span>
+                  <span class="mono text-muted">${fmt(val)}/mês (${pct}%)</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" style="width: ${pct}%"></div></div>
               </div>
-              <div class="w-full h-2 rounded-full bg-[var(--background)] overflow-hidden border border-[var(--border)]">
-                <div class="h-full bg-[var(--primary)]" style="width: ${pct}%"></div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-    }
-
-    function renderContas() {
-      const lista = document.getElementById('contas-lista');
-      if (state.accounts.length === 0) {
-        lista.innerHTML = `<div class="py-4 text-center text-xs text-[var(--muted-foreground)]">Nenhuma conta registrada.</div>`;
-        return;
-      }
-      const typeLabels = { corrente: 'Conta Corrente', reserva: 'Reserva/Invest.', cartao: 'Fatura Cartão', dinheiro: 'Dinheiro/Pix' };
-      lista.innerHTML = state.accounts.map(acc => `
-        <div class="py-2.5 flex items-center justify-between gap-2 text-xs">
-          <div>
-            <div class="font-medium">${escapeHtml(acc.name)}</div>
-            <div class="text-[var(--muted-foreground)]">${typeLabels[acc.type] || acc.type}</div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="font-mono tabular-nums font-medium ${acc.balance >= 0 ? 'text-[var(--foreground)]' : 'text-[var(--error)]'}">${fmt(acc.balance)}</span>
-            <button data-del-acc="${acc.id}" class="text-[var(--muted-foreground)] hover:text-[var(--error)] cursor-pointer" title="Remover">✕</button>
-          </div>
-        </div>
-      `).join('');
-
-      lista.querySelectorAll('button[data-del-acc]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-del-acc');
-          state.accounts = state.accounts.filter(a => a.id !== id);
-          saveState();
-          renderAll();
-        });
-      });
-
-      document.getElementById('api-url').value = state.apiConfig.url || '';
-      document.getElementById('api-token').value = state.apiConfig.token || '';
-      if (state.apiConfig.lastSync) {
-        document.getElementById('api-status-badge').textContent = 'Sincronizado';
-        document.getElementById('api-status-badge').className = 'text-xs px-2 py-0.5 rounded border border-[var(--success)] text-[var(--success)]';
-      }
+            `;
+          }).join('');
     }
 
     function renderLancamentos() {
@@ -810,21 +1618,19 @@
 
       const lista = document.getElementById('lancamentos-lista');
       if (filtered.length === 0) {
-        lista.innerHTML = `<div class="py-6 text-center text-xs text-[var(--muted-foreground)]">Nenhum lançamento encontrado.</div>`;
+        lista.innerHTML = `<div style="padding: 24px 0; text-align: center; font-size: 0.8rem;" class="text-muted">Nenhum lançamento encontrado.</div>`;
         return;
       }
 
       lista.innerHTML = filtered.map(tx => `
-        <div class="py-2.5 flex items-center justify-between gap-2 text-xs">
+        <div class="list-row">
           <div>
-            <div class="font-medium">${escapeHtml(tx.title)}</div>
-            <div class="text-[var(--muted-foreground)]">${tx.category} · ${freqLabel[tx.freq] || tx.freq}</div>
+            <div style="font-weight: 600; font-size: 0.84rem;">${escapeHtml(tx.title)}</div>
+            <div class="text-muted" style="font-size: 0.75rem;">${escapeHtml(tx.category)} · ${freqLabel[tx.freq] || tx.freq}</div>
           </div>
-          <div class="flex items-center gap-3">
-            <span class="font-mono tabular-nums font-medium ${tx.type === 'receita' ? 'text-[var(--success)]' : 'text-[var(--foreground)]'}">
-              ${tx.type === 'receita' ? '+' : '-'} ${fmt(tx.amount)}
-            </span>
-            <button data-del-tx="${tx.id}" class="text-[var(--muted-foreground)] hover:text-[var(--error)] cursor-pointer" title="Excluir">✕</button>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="mono ${tx.type === 'receita' ? 'text-invest' : ''}" style="font-weight: 600; font-size: 0.84rem;">${tx.type === 'receita' ? '+' : '-'} ${fmt(tx.amount)}</span>
+            <button data-del-tx="${tx.id}" class="del-btn" title="Excluir">✕</button>
           </div>
         </div>
       `).join('');
@@ -836,6 +1642,7 @@
           delete state.cutSimulations[id];
           saveState();
           renderAll();
+          showToast('Lançamento excluído');
         });
       });
     }
@@ -843,51 +1650,49 @@
     function renderMetas(m) {
       const lista = document.getElementById('metas-lista');
       if (state.goals.length === 0) {
-        lista.innerHTML = `<div class="text-xs text-[var(--muted-foreground)]">Nenhuma meta adicionada.</div>`;
+        lista.innerHTML = `<div class="text-muted" style="font-size: 0.8rem;">Nenhuma meta adicionada.</div>`;
         return;
       }
-
       const mensalDisponivel = m.liquidoMensal + m.economiaSimuladaMes;
 
       lista.innerHTML = state.goals.map(g => {
         const falta = Math.max(0, g.target - Math.max(0, m.saldoAtual));
         const pct = Math.min(100, Math.max(0, Math.round((Math.max(0, m.saldoAtual) / g.target) * 100)));
         let prazo = 'Ajuste seu saldo mensal positivo para estimar';
-        if (falta === 0) {
-          prazo = 'Meta já alcançada pelo saldo atual!';
-        } else if (mensalDisponivel > 0) {
+        if (falta === 0) prazo = 'Meta já alcançada pelo patrimônio atual!';
+        else if (mensalDisponivel > 0) {
           const meses = Math.ceil(falta / mensalDisponivel);
           prazo = `~${meses} ${meses === 1 ? 'mês' : 'meses'} no ritmo atual`;
         }
         return `
-          <div class="p-3 rounded-md bg-[var(--background)] border border-[var(--border)] space-y-1.5 text-xs">
-            <div class="flex justify-between items-center">
-              <span class="font-medium">${escapeHtml(g.name)}</span>
-              <button data-del-goal="${g.id}" class="text-[var(--muted-foreground)] hover:text-[var(--error)] cursor-pointer">✕</button>
+          <div style="padding: 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; font-size: 0.82rem;">${escapeHtml(g.name)}</span>
+              <button data-del-goal="${g.id}" class="del-btn">✕</button>
             </div>
-            <div class="flex justify-between text-[var(--muted-foreground)] tabular-nums">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem;" class="text-muted mono">
               <span>Alvo: ${fmt(g.target)}</span>
-              <span>${pct}%</span>
+              <span style="font-weight: 700; color: var(--fg);">${pct}%</span>
             </div>
-            <div class="w-full h-1.5 rounded-full bg-[var(--card)] overflow-hidden border border-[var(--border)]">
-              <div class="h-full bg-[var(--success)]" style="width: ${pct}%"></div>
-            </div>
-            <div class="text-[var(--muted-foreground)]">${prazo}</div>
+            <div class="progress-track"><div class="progress-fill" style="width: ${pct}%"></div></div>
+            <div style="font-size: 0.74rem;" class="text-muted">${prazo}</div>
           </div>
         `;
       }).join('');
 
       lista.querySelectorAll('button[data-del-goal]').forEach(btn => {
         btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-del-goal');
-          state.goals = state.goals.filter(g => g.id !== id);
+          state.goals = state.goals.filter(g => g.id !== btn.getAttribute('data-del-goal'));
           saveState();
           renderAll();
+          showToast('Meta removida');
         });
       });
     }
 
-    function drawChart(m) {
+    // Chart
+    let chartState = null;
+    function drawChart(m, hoverIdx = null) {
       const canvas = document.getElementById('chart-projection');
       if (!canvas) return;
       const dpr = window.devicePixelRatio || 1;
@@ -900,129 +1705,173 @@
       ctx.scale(dpr, dpr);
 
       const cs = getComputedStyle(document.documentElement);
-      const colorText = cs.getPropertyValue('--muted-foreground').trim() || '#888';
+      const colorText = cs.getPropertyValue('--fg-muted').trim() || '#888';
       const colorBorder = cs.getPropertyValue('--border').trim() || '#444';
-      const colorPrimary = cs.getPropertyValue('--primary').trim() || '#3b82f6';
-      const colorSuccess = cs.getPropertyValue('--success').trim() || '#22c55e';
+      const colorPrimary = cs.getPropertyValue('--primary').trim() || '#047857';
+      const colorSaldo = cs.getPropertyValue('--saldo').trim() || '#0284c7';
+      const colorCard = cs.getPropertyValue('--card').trim() || '#111';
 
-      const w = rect.width;
-      const h = rect.height;
-      const pad = { top: 14, right: 16, bottom: 26, left: 62 };
+      const w = rect.width, h = rect.height;
+      const pad = { top: 16, right: 16, bottom: 26, left: 64 };
       const plotW = w - pad.left - pad.right;
       const plotH = h - pad.top - pad.bottom;
 
-      const ptsAtual = [];
-      const ptsSim = [];
+      const ptsAtual = [], ptsSim = [];
       for (let i = 0; i <= 12; i++) {
         ptsAtual.push(m.saldoAtual + m.liquidoMensal * i);
         ptsSim.push(m.saldoAtual + (m.liquidoMensal + m.economiaSimuladaMes) * i);
       }
-
       const allVals = [...ptsAtual, ...ptsSim, 0];
-      const minV = Math.min(...allVals);
-      const maxV = Math.max(...allVals);
+      const minV = Math.min(...allVals), maxV = Math.max(...allVals);
       const range = (maxV - minV) || 1;
-
       const xPos = (i) => pad.left + (i / 12) * plotW;
       const yPos = (v) => pad.top + plotH - ((v - minV) / range) * plotH;
+      chartState = { m, ptsAtual, ptsSim, pad, plotW, xPos, yPos };
 
       ctx.clearRect(0, 0, w, h);
-
-      // Grid lines
       ctx.strokeStyle = colorBorder;
       ctx.lineWidth = 1;
-      ctx.font = '11px system-ui, sans-serif';
+      ctx.font = '11px "JetBrains Mono", monospace';
       ctx.fillStyle = colorText;
 
       for (let g = 0; g <= 4; g++) {
         const val = minV + (range * g) / 4;
         const y = yPos(val);
-        ctx.beginPath();
-        ctx.moveTo(pad.left, y);
-        ctx.lineTo(w - pad.right, y);
-        ctx.stroke();
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
         ctx.fillText(shortCurrency(val), pad.left - 8, y);
       }
 
-      // X labels
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      [0, 3, 6, 9, 12].forEach(i => {
-        ctx.fillText(i === 0 ? 'Hoje' : `+${i}m`, xPos(i), h - 18);
-      });
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      [0, 3, 6, 9, 12].forEach(i => ctx.fillText(i === 0 ? 'Hoje' : `+${i}m`, xPos(i), h - 18));
 
-      // Simulated line (dashed)
+      const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+      grad.addColorStop(0, colorPrimary + '24');
+      grad.addColorStop(1, colorPrimary + '00');
+      ctx.beginPath();
+      ctx.moveTo(xPos(0), yPos(ptsAtual[0]));
+      for (let i = 1; i <= 12; i++) ctx.lineTo(xPos(i), yPos(ptsAtual[i]));
+      ctx.lineTo(xPos(12), pad.top + plotH); ctx.lineTo(xPos(0), pad.top + plotH); ctx.closePath();
+      ctx.fillStyle = grad; ctx.fill();
+
       if (m.economiaSimuladaMes > 0) {
         ctx.save();
-        ctx.strokeStyle = colorSuccess;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = colorSaldo; ctx.lineWidth = 2.2; ctx.setLineDash([6, 4]);
         ctx.beginPath();
-        ptsSim.forEach((v, i) => {
-          if (i === 0) ctx.moveTo(xPos(i), yPos(v));
-          else ctx.lineTo(xPos(i), yPos(v));
-        });
-        ctx.stroke();
-        ctx.restore();
+        ptsSim.forEach((v, i) => i === 0 ? ctx.moveTo(xPos(i), yPos(v)) : ctx.lineTo(xPos(i), yPos(v)));
+        ctx.stroke(); ctx.restore();
       }
 
-      // Current trajectory line
-      ctx.strokeStyle = colorPrimary;
-      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = colorPrimary; ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ptsAtual.forEach((v, i) => {
-        if (i === 0) ctx.moveTo(xPos(i), yPos(v));
-        else ctx.lineTo(xPos(i), yPos(v));
-      });
+      ptsAtual.forEach((v, i) => i === 0 ? ctx.moveTo(xPos(i), yPos(v)) : ctx.lineTo(xPos(i), yPos(v)));
       ctx.stroke();
+
+      if (hoverIdx !== null) {
+        const hx = xPos(hoverIdx);
+        ctx.beginPath(); ctx.arc(hx, yPos(ptsAtual[hoverIdx]), 5, 0, Math.PI * 2);
+        ctx.fillStyle = colorPrimary; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = colorCard; ctx.stroke();
+      }
     }
+
+    const canvasEl = document.getElementById('chart-projection');
+    const tooltipEl = document.getElementById('chart-tooltip');
+    function handleChartHover(clientX) {
+      if (!chartState) return;
+      const rect = canvasEl.getBoundingClientRect();
+      const idx = Math.max(0, Math.min(12, Math.round(((clientX - rect.left - chartState.pad.left) / chartState.plotW) * 12)));
+      drawChart(chartState.m, idx);
+      let html = `<div style="font-weight: 700;">${idx === 0 ? 'Hoje' : `Em ${idx}m`}</div>`;
+      html += `<div>Atual: <span class="mono" style="font-weight: 600;">${fmt(chartState.ptsAtual[idx])}</span></div>`;
+      if (chartState.m.economiaSimuladaMes > 0) html += `<div class="text-saldo">Com cortes: <span class="mono">${fmt(chartState.ptsSim[idx])}</span></div>`;
+      tooltipEl.innerHTML = html;
+      tooltipEl.classList.remove('hidden');
+      tooltipEl.style.left = `${Math.max(60, Math.min(rect.width - 60, chartState.xPos(idx)))}px`;
+      tooltipEl.style.top = `${Math.max(44, chartState.yPos(chartState.ptsAtual[idx]))}px`;
+    }
+    canvasEl.addEventListener('mousemove', (e) => handleChartHover(e.clientX));
+    canvasEl.addEventListener('mouseleave', () => { tooltipEl.classList.add('hidden'); if (chartState) drawChart(chartState.m, null); });
 
     function shortCurrency(v) {
-      const abs = Math.abs(v);
-      const sign = v < 0 ? '-' : '';
-      if (abs >= 1000) return `${sign}R$${(abs / 1000).toFixed(1)}k`;
-      return `${sign}R$${Math.round(abs)}`;
+      const abs = Math.abs(v), sign = v < 0 ? '-' : '';
+      return abs >= 1000 ? `${sign}R$${(abs / 1000).toFixed(1)}k` : `${sign}R$${Math.round(abs)}`;
     }
-
     function escapeHtml(str) {
       return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
     }
 
-    // Tabs
+    // Navigation
+    const pageTitles = {
+      visao: 'Visão Geral do Patrimônio',
+      patrimonio: 'Saldo, Dívidas & Investimentos',
+      cortes: 'Simulador de Cortes',
+      historico: 'Lançamentos & Metas'
+    };
     function switchTab(tabName) {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
       document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        const active = b.getAttribute('data-tab') === tabName;
-        b.classList.toggle('border-[var(--primary)]', active);
-        b.classList.toggle('text-[var(--foreground)]', active);
-        b.classList.toggle('border-transparent', !active);
-        b.classList.toggle('text-[var(--muted-foreground)]', !active);
-      });
+      document.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === tabName));
+      document.getElementById('page-title').textContent = pageTitles[tabName] || 'Fluxo';
       if (tabName === 'visao') drawChart(computeMetrics());
     }
+    document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => switchTab(b.getAttribute('data-tab'))));
+    document.querySelectorAll('[data-goto-tab]').forEach(b => b.addEventListener('click', () => switchTab(b.getAttribute('data-goto-tab'))));
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+    // Subtabs inside Saldo, Dívidas & Investimentos
+    function switchSubtab(name) {
+      document.querySelectorAll('.subtab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`subtab-${name}`).classList.remove('hidden');
+      document.querySelectorAll('[data-subtab]').forEach(b => b.classList.toggle('active', b.getAttribute('data-subtab') === name));
+    }
+    document.querySelectorAll('[data-subtab]').forEach(b => b.addEventListener('click', () => switchSubtab(b.getAttribute('data-subtab'))));
+    document.getElementById('btn-open-api').addEventListener('click', () => { switchTab('patrimonio'); switchSubtab('api'); });
+
+    // Forms: Saldo, Dívida, Investimento
+    document.getElementById('form-saldo').addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.accounts.push({
+        id: 'acc_' + Date.now(),
+        name: document.getElementById('saldo-nome').value.trim(),
+        type: document.getElementById('saldo-tipo').value,
+        balance: parseFloat(document.getElementById('saldo-valor').value)
+      });
+      saveState(); e.target.reset(); renderAll(); showToast('Saldo adicionado');
     });
 
-    document.querySelectorAll('[data-goto-tab]').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.getAttribute('data-goto-tab')));
+    document.getElementById('form-divida').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = Math.abs(parseFloat(document.getElementById('divida-valor').value));
+      state.accounts.push({
+        id: 'acc_' + Date.now(),
+        name: document.getElementById('divida-nome').value.trim(),
+        type: document.getElementById('divida-tipo').value,
+        balance: -val,
+        note: document.getElementById('divida-obs').value.trim()
+      });
+      saveState(); e.target.reset(); renderAll(); showToast('Dívida registrada');
     });
 
-    document.getElementById('btn-open-api').addEventListener('click', () => switchTab('saldos'));
+    document.getElementById('form-invest').addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.accounts.push({
+        id: 'acc_' + Date.now(),
+        name: document.getElementById('invest-nome').value.trim(),
+        type: document.getElementById('invest-tipo').value,
+        balance: Math.abs(parseFloat(document.getElementById('invest-valor').value)),
+        note: document.getElementById('invest-obs').value.trim()
+      });
+      saveState(); e.target.reset(); renderAll(); showToast('Investimento adicionado');
+    });
 
-    // Modal Novo Lançamento
+    // Modal
     const modal = document.getElementById('modal-lancamento');
-    document.getElementById('btn-quick-add').addEventListener('click', () => {
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    });
-    const closeModal = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+    const closeModal = () => modal.classList.add('hidden');
+    document.getElementById('btn-quick-add').addEventListener('click', () => { modal.classList.remove('hidden'); setTimeout(() => document.getElementById('lanc-titulo').focus(), 40); });
     document.getElementById('btn-close-modal').addEventListener('click', closeModal);
     document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal(); });
 
     document.getElementById('form-lancamento').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -1036,58 +1885,25 @@
         cuttable: document.getElementById('lanc-cortavel').checked,
         createdAt: new Date().toISOString().slice(0, 10)
       });
-      saveState();
-      e.target.reset();
-      document.getElementById('lanc-cortavel').checked = true;
-      closeModal();
-      renderAll();
+      saveState(); e.target.reset(); document.getElementById('lanc-cortavel').checked = true;
+      closeModal(); renderAll(); showToast('Lançamento adicionado');
     });
 
-    // Form Conta
-    document.getElementById('form-conta').addEventListener('submit', (e) => {
-      e.preventDefault();
-      let val = parseFloat(document.getElementById('conta-valor').value);
-      const type = document.getElementById('conta-tipo').value;
-      if (type === 'cartao' && val > 0) val = -val;
-      state.accounts.push({
-        id: 'acc_' + Date.now(),
-        name: document.getElementById('conta-nome').value.trim(),
-        type,
-        balance: val
-      });
-      saveState();
-      e.target.reset();
-      renderAll();
-    });
-
-    // Form Meta
     document.getElementById('form-meta').addEventListener('submit', (e) => {
       e.preventDefault();
-      state.goals.push({
-        id: 'g_' + Date.now(),
-        name: document.getElementById('meta-nome').value.trim(),
-        target: parseFloat(document.getElementById('meta-valor').value)
-      });
-      saveState();
-      e.target.reset();
-      renderAll();
+      state.goals.push({ id: 'g_' + Date.now(), name: document.getElementById('meta-nome').value.trim(), target: parseFloat(document.getElementById('meta-valor').value) });
+      saveState(); e.target.reset(); renderAll(); showToast('Meta adicionada');
     });
 
-    // Meta mensal input
     document.getElementById('input-meta-mensal').addEventListener('change', (e) => {
       state.metaMensal = Math.max(0, parseFloat(e.target.value) || 0);
-      saveState();
-      renderAll();
+      saveState(); renderAll();
     });
 
-    // Reset simulations
     document.getElementById('btn-reset-sim').addEventListener('click', () => {
-      state.cutSimulations = {};
-      saveState();
-      renderAll();
+      state.cutSimulations = {}; saveState(); renderAll(); showToast('Simulação zerada');
     });
 
-    // Filters
     document.getElementById('filtro-busca').addEventListener('input', renderLancamentos);
     document.getElementById('filtro-tipo').addEventListener('change', renderLancamentos);
 
@@ -1099,7 +1915,8 @@
           id: a.id || `api_acc_${i}_${Date.now()}`,
           name: a.name || 'Conta API',
           type: a.type || 'corrente',
-          balance: Number(a.balance) || 0
+          balance: Number(a.balance) || 0,
+          note: a.note || ''
         }));
         countAcc = state.accounts.length;
       }
@@ -1118,8 +1935,7 @@
         countTx = imported.length;
       }
       state.apiConfig.lastSync = new Date().toISOString();
-      saveState();
-      renderAll();
+      saveState(); renderAll();
       return { countAcc, countTx };
     }
 
@@ -1127,50 +1943,40 @@
       const url = document.getElementById('api-url').value.trim();
       const token = document.getElementById('api-token').value.trim();
       const log = document.getElementById('api-log');
-      if (!url) {
-        log.textContent = 'Erro: informe a URL do endpoint JSON.';
-        return;
-      }
-      state.apiConfig.url = url;
-      state.apiConfig.token = token;
-      saveState();
+      if (!url) { log.textContent = 'Erro: informe a URL do endpoint JSON.'; return; }
+      state.apiConfig.url = url; state.apiConfig.token = token; saveState();
       log.textContent = 'Conectando ao endpoint...';
       try {
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const res = await fetch(url, { headers });
+        const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const { countAcc, countTx } = applyApiPayload(data);
-        log.textContent = `Sucesso! ${countAcc} conta(s) atualizada(s) e ${countTx} lançamento(s) importado(s).`;
+        const { countAcc, countTx } = applyApiPayload(await res.json());
+        log.textContent = `Sucesso! ${countAcc} registros patrimoniais e ${countTx} lançamento(s) importados.`;
+        showToast('API sincronizada');
       } catch (err) {
-        log.textContent = `Falha na requisição (${err.message}). Verifique CORS ou use um proxy/backend.`;
+        log.textContent = `Falha na requisição (${err.message}).`;
       }
     });
 
     document.getElementById('btn-demo-api').addEventListener('click', () => {
-      const simulated = {
+      const { countAcc, countTx } = applyApiPayload({
         accounts: [
-          { name: 'Nubank (via Open Finance)', type: 'corrente', balance: 4890.50 },
-          { name: 'XP Investimentos (via API)', type: 'reserva', balance: 12400.00 },
-          { name: 'Cartão Black (via API)', type: 'cartao', balance: -1650.25 }
+          { name: 'Nubank (Open Finance)', type: 'corrente', balance: 4890.50 },
+          { name: 'XP Investimentos', type: 'reserva', balance: 12400.00, note: 'CDB + Tesouro' },
+          { name: 'Cartão Black', type: 'cartao', balance: -1650.25, note: 'Fatura atual' }
         ],
-        transactions: [
-          { title: 'Freela / Projeto Extra', type: 'receita', freq: 'unico', amount: 1400, category: 'Renda', cuttable: false }
-        ]
-      };
-      const { countAcc, countTx } = applyApiPayload(simulated);
-      document.getElementById('api-log').textContent = `Simulação concluída: ${countAcc} contas sincronizadas e ${countTx} lançamento adicionado.`;
+        transactions: [{ title: 'Freela / Projeto Extra', type: 'receita', freq: 'unico', amount: 1400, category: 'Renda', cuttable: false }]
+      });
+      document.getElementById('api-log').textContent = `Simulação concluída: ${countAcc} registros e ${countTx} lançamento.`;
+      showToast('Simulação aplicada');
     });
 
-    // Export / Import
     document.getElementById('btn-export').addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = URL.createObjectURL(blob);
       a.download = `fluxo-financeiro-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
-      URL.revokeObjectURL(url);
+      showToast('Backup exportado');
     });
 
     document.getElementById('input-import').addEventListener('change', (e) => {
@@ -1179,20 +1985,15 @@
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const parsed = JSON.parse(ev.target.result);
-          state = { ...structuredClone(defaultState), ...parsed };
-          saveState();
-          renderAll();
-        } catch {
-          alert('Arquivo JSON inválido.');
-        }
+          state = { ...structuredClone(defaultState), ...JSON.parse(ev.target.result) };
+          saveState(); renderAll(); showToast('Backup importado');
+        } catch { alert('Arquivo JSON inválido.'); }
       };
       reader.readAsText(file);
     });
 
     window.addEventListener('resize', () => drawChart(computeMetrics()));
-    window.addEventListener('themechange', () => drawChart(computeMetrics()));
-
+    initTheme();
     renderAll();
   </script>
 </body>
