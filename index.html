@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Fluxo Financeiro" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Fluxo — Controle Financeiro (Dia, Mês, Ano)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --background: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --foreground: #0f172a;
+      --muted-foreground: #64748b;
+      --primary: #2563eb;
+      --primary-foreground: #ffffff;
+      --secondary: #f1f5f9;
+      --secondary-foreground: #0f172a;
+      --success: #16a34a;
+      --warning: #d97706;
+      --error: #dc2626;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #0b1120;
+        --card: #111827;
+        --border: #1f2937;
+        --foreground: #f8fafc;
+        --muted-foreground: #94a3b8;
+        --primary: #3b82f6;
+        --primary-foreground: #ffffff;
+        --secondary: #1e293b;
+        --secondary-foreground: #f8fafc;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --error: #ef4444;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 9999px; }
+  </style>
+</head>
+<body class="bg-[var(--background)] text-[var(--foreground)] antialiased m-0 p-0 min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- Header -->
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border)]">
+      <div>
+        <h1 class="text-xl font-semibold tracking-tight text-[var(--foreground)]">Fluxo Financeiro</h1>
+        <p class="text-xs text-[var(--muted-foreground)] mt-0.5">
+          Saldos atuais, integração via API, cálculo por dia/mês/ano e plano de cortes.
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="btn-quick-add" class="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 transition cursor-pointer">
+          + Novo Lançamento
+        </button>
+        <button id="btn-open-api" class="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] hover:opacity-90 transition cursor-pointer">
+          Integrar API
+        </button>
+        <button id="btn-export" class="px-2.5 py-1.5 text-xs rounded-md border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition cursor-pointer" title="Exportar dados em JSON">
+          Exportar
+        </button>
+        <label class="px-2.5 py-1.5 text-xs rounded-md border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition cursor-pointer" title="Importar backup JSON">
+          Importar
+          <input id="input-import" type="file" accept=".json" class="hidden" />
+        </label>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex items-center gap-1 border-b border-[var(--border)] overflow-x-auto">
+      <button data-tab="visao" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-[var(--primary)] text-[var(--foreground)] whitespace-nowrap cursor-pointer">
+        Visão Dia / Mês / Ano
+      </button>
+      <button data-tab="cortes" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] whitespace-nowrap cursor-pointer">
+        O que devo diminuir
+      </button>
+      <button data-tab="saldos" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] whitespace-nowrap cursor-pointer">
+        Saldos &amp; APIs
+      </button>
+      <button data-tab="historico" class="tab-btn px-3 py-2 text-xs font-medium border-b-2 border-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] whitespace-nowrap cursor-pointer">
+        Lançamentos &amp; Metas
+      </button>
+    </nav>
+
+    <!-- KPI Strip (Always Visible) -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3.5">
+        <div class="text-xs text-[var(--muted-foreground)]">Saldo Atual Consolidado</div>
+        <div id="kpi-saldo" class="text-lg font-semibold tabular-nums mt-1">R$ 0,00</div>
+        <div id="kpi-saldo-sub" class="text-xs text-[var(--muted-foreground)] mt-1">0 contas registradas</div>
+      </div>
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3.5">
+        <div class="text-xs text-[var(--muted-foreground)]">Disponível por Dia</div>
+        <div id="kpi-dia" class="text-lg font-semibold tabular-nums mt-1">R$ 0,00</div>
+        <div id="kpi-dia-sub" class="text-xs text-[var(--muted-foreground)] mt-1">Líquido diário estimado</div>
+      </div>
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3.5">
+        <div class="text-xs text-[var(--muted-foreground)]">Resultado do Mês</div>
+        <div id="kpi-mes" class="text-lg font-semibold tabular-nums mt-1">R$ 0,00</div>
+        <div id="kpi-mes-sub" class="text-xs text-[var(--muted-foreground)] mt-1">Receitas - Despesas</div>
+      </div>
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3.5">
+        <div class="text-xs text-[var(--muted-foreground)]">Projeção em 1 Ano</div>
+        <div id="kpi-ano" class="text-lg font-semibold tabular-nums mt-1">R$ 0,00</div>
+        <div id="kpi-ano-sub" class="text-xs text-[var(--muted-foreground)] mt-1">Saldo atual + 12 meses</div>
+      </div>
+    </section>
+
+    <!-- TAB 1: VISÃO DIA / MÊS / ANO -->
+    <main id="tab-visao" class="tab-panel space-y-5">
+      <!-- Period Comparison Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- DIA -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold">Cálculo por Dia</h2>
+            <span class="text-xs text-[var(--muted-foreground)]">Base 30 dias/mês</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Entrada média/dia</span>
+              <span id="dia-receita" class="font-mono tabular-nums text-[var(--success)]">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Custo fixo/dia</span>
+              <span id="dia-fixo" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Gasto variável/dia</span>
+              <span id="dia-variavel" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="pt-2 border-t border-[var(--border)] flex justify-between font-medium">
+              <span>Saldo líquido/dia</span>
+              <span id="dia-liquido" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between text-[var(--muted-foreground)]">
+              <span>Teto seguro hoje (c/ meta)</span>
+              <span id="dia-teto" class="font-mono tabular-nums font-medium text-[var(--foreground)]">R$ 0,00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- MÊS -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold">Cálculo do Mês</h2>
+            <span id="mes-atual-label" class="text-xs text-[var(--muted-foreground)]"></span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Receitas mensais</span>
+              <span id="mes-receita" class="font-mono tabular-nums text-[var(--success)]">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Despesas fixas</span>
+              <span id="mes-fixo" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Despesas variáveis</span>
+              <span id="mes-variavel" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Provisão anual (1/12)</span>
+              <span id="mes-anual-rateio" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="pt-2 border-t border-[var(--border)] flex justify-between font-medium">
+              <span>Balanço mensal</span>
+              <span id="mes-liquido" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANO -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold">Cálculo do Ano</h2>
+            <span class="text-xs text-[var(--muted-foreground)]">12 meses</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Receita anual</span>
+              <span id="ano-receita" class="font-mono tabular-nums text-[var(--success)]">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Gasto mensal × 12</span>
+              <span id="ano-recorrente" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[var(--muted-foreground)]">Custos anuais avulsos</span>
+              <span id="ano-avulsos" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="pt-2 border-t border-[var(--border)] flex justify-between font-medium">
+              <span>Economia / Déficit anual</span>
+              <span id="ano-liquido" class="font-mono tabular-nums">R$ 0,00</span>
+            </div>
+            <div class="flex justify-between text-[var(--muted-foreground)]">
+              <span>Patrimônio projetado</span>
+              <span id="ano-patrimonio" class="font-mono tabular-nums font-medium text-[var(--foreground)]">R$ 0,00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Projection Chart + Quick Diagnosis -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-semibold">Projeção de Saldo — Próximos 12 Meses</h3>
+              <p class="text-xs text-[var(--muted-foreground)]">Linha sólida: ritmo atual | Linha tracejada: com cortes simulados</p>
+            </div>
+          </div>
+          <div class="w-full h-56 relative">
+            <canvas id="chart-projection" class="w-full h-full"></canvas>
+          </div>
+        </div>
+
+        <!-- Quick Action & Goal Box -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 flex flex-col justify-between space-y-4">
+          <div class="space-y-3">
+            <h3 class="text-sm font-semibold">Meta de Economia Mensal</h3>
+            <p class="text-xs text-[var(--muted-foreground)]">
+              Defina quanto você quer guardar por mês para o app calcular o que precisa diminuir.
+            </p>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-[var(--muted-foreground)]">R$</span>
+              <input id="input-meta-mensal" type="number" min="0" step="50" class="w-full px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] tabular-nums" />
+            </div>
+            <div id="diagnostico-resumo" class="p-3 rounded-md bg-[var(--background)] border border-[var(--border)] text-xs space-y-1.5">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <button data-goto-tab="cortes" class="w-full py-2 text-xs font-medium rounded-md bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] hover:opacity-90 transition cursor-pointer">
+            Abrir Simulador de Cortes &rarr;
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 2: O QUE DEVO DIMINUIR -->
+    <main id="tab-cortes" class="tab-panel hidden space-y-5">
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-semibold">Diagnóstico: O que devo diminuir?</h2>
+            <p class="text-xs text-[var(--muted-foreground)]">
+              Priorizamos gastos marcados como "Cortável" e as maiores categorias variáveis. Marque ou ajuste o corte para simular o impacto no Dia, Mês e Ano.
+            </p>
+          </div>
+          <button id="btn-reset-sim" class="px-2.5 py-1 text-xs rounded-md border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer self-start">
+            Zerar Simulação
+          </button>
+        </div>
+
+        <!-- Simulation Result Banner -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-[var(--background)] border border-[var(--border)]">
+          <div>
+            <div class="text-xs text-[var(--muted-foreground)]">Economia Simulada / Mês</div>
+            <div id="sim-eco-mes" class="text-base font-semibold tabular-nums text-[var(--success)] mt-0.5">R$ 0,00</div>
+          </div>
+          <div>
+            <div class="text-xs text-[var(--muted-foreground)]">Ganho por Dia</div>
+            <div id="sim-eco-dia" class="text-base font-semibold tabular-nums mt-0.5">+ R$ 0,00/dia</div>
+          </div>
+          <div>
+            <div class="text-xs text-[var(--muted-foreground)]">Novo Balanço Anual</div>
+            <div id="sim-novo-ano" class="text-base font-semibold tabular-nums mt-0.5">R$ 0,00</div>
+          </div>
+        </div>
+
+        <!-- Cuttable Items List -->
+        <div id="cortes-lista" class="divide-y divide-[var(--border)]">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Category Breakdown -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+        <h3 class="text-sm font-semibold">Peso por Categoria (Mensalizado)</h3>
+        <div id="categorias-peso" class="space-y-2.5">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 3: SALDOS & APIS -->
+    <main id="tab-saldos" class="tab-panel hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Manual Accounts -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-semibold">Saldos Atuais (Contas e Cartões)</h2>
+              <p class="text-xs text-[var(--muted-foreground)]">Registre saldos positivos ou faturas/dívidas (negativos).</p>
+            </div>
+          </div>
+
+          <form id="form-conta" class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+            <input id="conta-nome" type="text" placeholder="Ex: Nubank, Itaú, Carteira" required class="sm:col-span-5 px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]" />
+            <select id="conta-tipo" class="sm:col-span-3 px-2 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+              <option value="corrente">Conta Corrente</option>
+              <option value="reserva">Reserva / Invest.</option>
+              <option value="cartao">Fatura Cartão (-)</option>
+              <option value="dinheiro">Dinheiro / Pix</option>
+            </select>
+            <input id="conta-valor" type="number" step="0.01" placeholder="Valor R$" required class="sm:col-span-2 px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] tabular-nums" />
+            <button type="submit" class="sm:col-span-2 px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer">
+              Salvar
+            </button>
+          </form>
+
+          <div id="contas-lista" class="divide-y divide-[var(--border)]">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- API Integration Panel -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-semibold">Integração via API (Open Finance / REST)</h2>
+              <p class="text-xs text-[var(--muted-foreground)]">Conecte um endpoint JSON (Pluggy, Belvo, servidor próprio ou Apps Script) para puxar saldos e transações.</p>
+            </div>
+            <span id="api-status-badge" class="text-xs px-2 py-0.5 rounded border border-[var(--border)] text-[var(--muted-foreground)]">Desconectado</span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-[var(--muted-foreground)] mb-1">URL do Endpoint (GET JSON)</label>
+              <input id="api-url" type="url" placeholder="https://sua-api.com/financeiro/resumo" class="w-full px-2.5 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-mono" />
+            </div>
+            <div>
+              <label class="block text-[var(--muted-foreground)] mb-1">Bearer Token / API Key (Opcional)</label>
+              <input id="api-token" type="password" placeholder="sk_live_..." class="w-full px-2.5 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] font-mono" />
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button id="btn-sync-api" class="px-3 py-1.5 font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer">
+                Sincronizar Agora
+              </button>
+              <button id="btn-demo-api" class="px-3 py-1.5 font-medium rounded-md bg-[var(--secondary)] text-[var(--secondary-foreground)] border border-[var(--border)] hover:opacity-90 cursor-pointer">
+                Testar com Resposta Simulada
+              </button>
+            </div>
+
+            <div id="api-log" class="p-2.5 rounded-md bg-[var(--background)] border border-[var(--border)] font-mono text-xs text-[var(--muted-foreground)] whitespace-pre-wrap">Aguardando sincronização...</div>
+
+            <details class="pt-1">
+              <summary class="cursor-pointer text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Ver formato JSON esperado pela API</summary>
+              <pre class="mt-2 p-2.5 rounded-md bg-[var(--background)] border border-[var(--border)] font-mono text-xs overflow-x-auto">{
+  "accounts": [
+    { "name": "Banco Inter", "type": "corrente", "balance": 4250.80 },
+    { "name": "Cartão Nubank", "type": "cartao", "balance": -1180.00 }
+  ],
+  "transactions": [
+    { "title": "Salário", "type": "receita", "freq": "mensal", "amount": 6500, "category": "Renda", "cuttable": false },
+    { "title": "Delivery", "type": "despesa", "freq": "mensal", "amount": 620, "category": "Alimentação", "cuttable": true }
+  ]
+}</pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- TAB 4: LANÇAMENTOS & METAS (ADICIONANDO COM O TEMPO) -->
+    <main id="tab-historico" class="tab-panel hidden space-y-5">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Transactions List -->
+        <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 class="text-sm font-semibold">Lançamentos Registrados</h2>
+            <div class="flex items-center gap-2">
+              <input id="filtro-busca" type="text" placeholder="Buscar..." class="px-2.5 py-1 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]" />
+              <select id="filtro-tipo" class="px-2 py-1 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+                <option value="todos">Todos</option>
+                <option value="receita">Receitas</option>
+                <option value="despesa">Despesas</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="lancamentos-lista" class="divide-y divide-[var(--border)] max-h-[460px] overflow-y-auto">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Future Goals / Adding over time -->
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 space-y-4">
+          <div>
+            <h2 class="text-sm font-semibold">Metas &amp; Planos Futuros</h2>
+            <p class="text-xs text-[var(--muted-foreground)]">Adicione objetivos ao longo do tempo para ver em quantos dias/meses você alcança.</p>
+          </div>
+          <form id="form-meta" class="space-y-2">
+            <input id="meta-nome" type="text" placeholder="Ex: Reserva de emergência, Viagem" required class="w-full px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]" />
+            <div class="flex gap-2">
+              <input id="meta-valor" type="number" min="1" step="0.01" placeholder="Valor alvo R$" required class="w-full px-2.5 py-1.5 text-xs rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] tabular-nums" />
+              <button type="submit" class="px-3 py-1.5 text-xs font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 whitespace-nowrap cursor-pointer">
+                + Meta
+              </button>
+            </div>
+          </form>
+          <div id="metas-lista" class="space-y-2.5">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Modal: Novo Lançamento -->
+  <div id="modal-lancamento" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div class="bg-[var(--card)] border border-[var(--border)] rounded-lg w-full max-w-md p-5 space-y-4 shadow-xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-semibold">Adicionar Lançamento</h3>
+        <button id="btn-close-modal" class="text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer">Fechar ✕</button>
+      </div>
+      <form id="form-lancamento" class="space-y-3 text-xs">
+        <div>
+          <label class="block text-[var(--muted-foreground)] mb-1">Descrição</label>
+          <input id="lanc-titulo" type="text" placeholder="Ex: Salário, Mercado, Netflix, Uber" required class="w-full px-2.5 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[var(--muted-foreground)] mb-1">Tipo</label>
+            <select id="lanc-tipo" class="w-full px-2 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+              <option value="despesa">Despesa (-)</option>
+              <option value="receita">Receita (+)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[var(--muted-foreground)] mb-1">Valor (R$)</label>
+            <input id="lanc-valor" type="number" min="0.01" step="0.01" placeholder="0,00" required class="w-full px-2.5 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] tabular-nums" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[var(--muted-foreground)] mb-1">Frequência</label>
+            <select id="lanc-freq" class="w-full px-2 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+              <option value="mensal">Mensal (Fixo/Recorrente)</option>
+              <option value="diario">Diário (Todos os dias)</option>
+              <option value="semanal">Semanal</option>
+              <option value="anual">Anual (IPVA, Seguro...)</option>
+              <option value="unico">Único (Avulso este mês)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[var(--muted-foreground)] mb-1">Categoria</label>
+            <select id="lanc-cat" class="w-full px-2 py-1.5 rounded-md bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+              <option value="Moradia">Moradia</option>
+              <option value="Alimentação">Alimentação</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Assinaturas">Assinaturas &amp; Apps</option>
+              <option value="Lazer">Lazer &amp; Compras</option>
+              <option value="Saúde">Saúde</option>
+              <option value="Renda">Renda / Salário</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+        </div>
+        <label class="flex items-center gap-2 pt-1 cursor-pointer">
+          <input id="lanc-cortavel" type="checkbox" checked class="accent-[var(--primary)]" />
+          <span>Este gasto pode ser reduzido/cortado se necessário</span>
+        </label>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="btn-cancel-modal" class="px-3 py-1.5 rounded-md border border-[var(--border)] text-[var(--muted-foreground)] cursor-pointer">Cancelar</button>
+          <button type="submit" class="px-4 py-1.5 font-medium rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 cursor-pointer">Adicionar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'fluxo_financeiro_v1';
+
+    const defaultState = {
+      metaMensal: 800,
+      accounts: [
+        { id: 'acc1', name: 'Conta Principal', type: 'corrente', balance: 3450.00 },
+        { id: 'acc2', name: 'Reserva / CDB', type: 'reserva', balance: 8200.00 },
+        { id: 'acc3', name: 'Fatura Cartão', type: 'cartao', balance: -1240.00 }
+      ],
+      transactions: [
+        { id: 'tx1', title: 'Salário / Pró-labore', type: 'receita', freq: 'mensal', amount: 5800, category: 'Renda', cuttable: false, createdAt: '2026-11-01' },
+        { id: 'tx2', title: 'Aluguel + Condomínio', type: 'despesa', freq: 'mensal', amount: 1950, category: 'Moradia', cuttable: false, createdAt: '2026-11-02' },
+        { id: 'tx3', title: 'Supermercado', type: 'despesa', freq: 'mensal', amount: 950, category: 'Alimentação', cuttable: true, createdAt: '2026-11-05' },
+        { id: 'tx4', title: 'Delivery & Restaurantes', type: 'despesa', freq: 'semanal', amount: 160, category: 'Alimentação', cuttable: true, createdAt: '2026-11-08' },
+        { id: 'tx5', title: 'Streaming & Assinaturas', type: 'despesa', freq: 'mensal', amount: 185, category: 'Assinaturas', cuttable: true, createdAt: '2026-11-10' },
+        { id: 'tx6', title: 'Transporte / App', type: 'despesa', freq: 'diario', amount: 22, category: 'Transporte', cuttable: true, createdAt: '2026-11-12' },
+        { id: 'tx7', title: 'IPVA / Seguros', type: 'despesa', freq: 'anual', amount: 1800, category: 'Transporte', cuttable: false, createdAt: '2026-11-15' }
+      ],
+      goals: [
+        { id: 'g1', name: 'Reserva de 6 meses', target: 20000 }
+      ],
+      apiConfig: { url: '', token: '', lastSync: null },
+      cutSimulations: {} // { txId: percentCut (0-100) }
+    };
+
+    let state = loadState();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+        return { ...structuredClone(defaultState), ...parsed };
+      } catch {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+
+    function monthlyEquivalent(tx) {
+      const val = Number(tx.amount) || 0;
+      switch (tx.freq) {
+        case 'diario': return val * 30;
+        case 'semanal': return val * 4.33;
+        case 'mensal': return val;
+        case 'anual': return val / 12;
+        case 'unico': return val;
+        default: return val;
+      }
+    }
+
+    function computeMetrics() {
+      const saldoAtual = state.accounts.reduce((sum, a) => sum + (Number(a.balance) || 0), 0);
+
+      let recMensal = 0;
+      let despFixaMensal = 0;
+      let despVarMensal = 0;
+      let despAnualAvulsa = 0;
+      let economiaSimuladaMes = 0;
+
+      state.transactions.forEach(tx => {
+        const m = monthlyEquivalent(tx);
+        if (tx.type === 'receita') {
+          recMensal += m;
+        } else {
+          if (tx.freq === 'anual') {
+            despAnualAvulsa += Number(tx.amount) || 0;
+          } else if (tx.freq === 'mensal' && !tx.cuttable) {
+            despFixaMensal += m;
+          } else {
+            despVarMensal += m;
+          }
+          const cutPct = state.cutSimulations[tx.id] || 0;
+          if (cutPct > 0) {
+            economiaSimuladaMes += m * (cutPct / 100);
+          }
+        }
+      });
+
+      const rateioAnualMes = despAnualAvulsa / 12;
+      const despTotalMensal = despFixaMensal + despVarMensal + rateioAnualMes;
+      const liquidoMensal = recMensal - despTotalMensal;
+
+      const recDia = recMensal / 30;
+      const fixoDia = despFixaMensal / 30;
+      const varDia = (despVarMensal + rateioAnualMes) / 30;
+      const liquidoDia = liquidoMensal / 30;
+
+      // Teto seguro hoje: quanto sobra por dia depois de pagar fixos + meta mensal
+      const meta = Number(state.metaMensal) || 0;
+      const tetoSeguroHoje = (recMensal - despFixaMensal - rateioAnualMes - meta) / 30;
+
+      const recAnual = recMensal * 12;
+      const despRecorrenteAnual = (despFixaMensal + despVarMensal) * 12;
+      const liquidoAnual = liquidoMensal * 12;
+      const patrimonio1Ano = saldoAtual + liquidoAnual;
+
+      const faltaParaMeta = meta - liquidoMensal;
+
+      return {
+        saldoAtual,
+        recMensal, despFixaMensal, despVarMensal, rateioAnualMes, despTotalMensal, liquidoMensal,
+        recDia, fixoDia, varDia, liquidoDia, tetoSeguroHoje,
+        recAnual, despRecorrenteAnual, despAnualAvulsa, liquidoAnual, patrimonio1Ano,
+        economiaSimuladaMes, faltaParaMeta, meta
+      };
+    }
+
+    function renderAll() {
+      const m = computeMetrics();
+
+      // Month label
+      const now = new Date();
+      document.getElementById('mes-atual-label').textContent = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+      // KPIs
+      const kpiSaldo = document.getElementById('kpi-saldo');
+      kpiSaldo.textContent = fmt(m.saldoAtual);
+      kpiSaldo.className = `text-lg font-semibold tabular-nums mt-1 ${m.saldoAtual >= 0 ? 'text-[var(--foreground)]' : 'text-[var(--error)]'}`;
+      document.getElementById('kpi-saldo-sub').textContent = `${state.accounts.length} conta(s) registrada(s)`;
+
+      const kpiDia = document.getElementById('kpi-dia');
+      kpiDia.textContent = fmt(m.liquidoDia);
+      kpiDia.className = `text-lg font-semibold tabular-nums mt-1 ${m.liquidoDia >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+      document.getElementById('kpi-dia-sub').textContent = `Teto seguro/dia: ${fmt(m.tetoSeguroHoje)}`;
+
+      const kpiMes = document.getElementById('kpi-mes');
+      kpiMes.textContent = fmt(m.liquidoMensal);
+      kpiMes.className = `text-lg font-semibold tabular-nums mt-1 ${m.liquidoMensal >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+      document.getElementById('kpi-mes-sub').textContent = `Gasto total: ${fmt(m.despTotalMensal)}`;
+
+      const kpiAno = document.getElementById('kpi-ano');
+      kpiAno.textContent = fmt(m.patrimonio1Ano);
+      kpiAno.className = `text-lg font-semibold tabular-nums mt-1 ${m.patrimonio1Ano >= m.saldoAtual ? 'text-[var(--foreground)]' : 'text-[var(--warning)]'}`;
+      document.getElementById('kpi-ano-sub').textContent = `Variação anual: ${m.liquidoAnual >= 0 ? '+' : ''}${fmt(m.liquidoAnual)}`;
+
+      // Dia card
+      document.getElementById('dia-receita').textContent = fmt(m.recDia);
+      document.getElementById('dia-fixo').textContent = fmt(m.fixoDia);
+      document.getElementById('dia-variavel').textContent = fmt(m.varDia);
+      const diaLiqEl = document.getElementById('dia-liquido');
+      diaLiqEl.textContent = fmt(m.liquidoDia);
+      diaLiqEl.className = `font-mono tabular-nums ${m.liquidoDia >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+      document.getElementById('dia-teto').textContent = fmt(m.tetoSeguroHoje);
+
+      // Mês card
+      document.getElementById('mes-receita').textContent = fmt(m.recMensal);
+      document.getElementById('mes-fixo').textContent = fmt(m.despFixaMensal);
+      document.getElementById('mes-variavel').textContent = fmt(m.despVarMensal);
+      document.getElementById('mes-anual-rateio').textContent = fmt(m.rateioAnualMes);
+      const mesLiqEl = document.getElementById('mes-liquido');
+      mesLiqEl.textContent = fmt(m.liquidoMensal);
+      mesLiqEl.className = `font-mono tabular-nums ${m.liquidoMensal >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+
+      // Ano card
+      document.getElementById('ano-receita').textContent = fmt(m.recAnual);
+      document.getElementById('ano-recorrente').textContent = fmt(m.despRecorrenteAnual);
+      document.getElementById('ano-avulsos').textContent = fmt(m.despAnualAvulsa);
+      const anoLiqEl = document.getElementById('ano-liquido');
+      anoLiqEl.textContent = fmt(m.liquidoAnual);
+      anoLiqEl.className = `font-mono tabular-nums ${m.liquidoAnual >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+      document.getElementById('ano-patrimonio').textContent = fmt(m.patrimonio1Ano);
+
+      // Meta input & diagnóstico
+      document.getElementById('input-meta-mensal').value = state.metaMensal;
+      const diagEl = document.getElementById('diagnostico-resumo');
+      if (m.liquidoMensal < 0) {
+        diagEl.innerHTML = `
+          <div class="font-medium text-[var(--error)]">Atenção: Déficit mensal de ${fmt(Math.abs(m.liquidoMensal))}</div>
+          <div class="text-[var(--muted-foreground)]">Você precisa reduzir pelo menos <strong class="text-[var(--foreground)]">${fmt(Math.abs(m.liquidoMensal) / 30)}/dia</strong> para empatar, ou <strong class="text-[var(--foreground)]">${fmt(m.faltaParaMeta)}/mês</strong> para atingir sua meta.</div>
+        `;
+      } else if (m.faltaParaMeta > 0) {
+        diagEl.innerHTML = `
+          <div class="font-medium text-[var(--warning)]">Faltam ${fmt(m.faltaParaMeta)}/mês para sua meta</div>
+          <div class="text-[var(--muted-foreground)]">Você está no azul (+${fmt(m.liquidoMensal)}/mês), mas precisa diminuir <strong class="text-[var(--foreground)]">${fmt(m.faltaParaMeta / 30)}/dia</strong> para guardar ${fmt(m.meta)}/mês.</div>
+        `;
+      } else {
+        diagEl.innerHTML = `
+          <div class="font-medium text-[var(--success)]">Meta mensal atingida!</div>
+          <div class="text-[var(--muted-foreground)]">Sobra projetada de <strong class="text-[var(--foreground)]">${fmt(m.liquidoMensal)}/mês</strong> (${fmt(m.liquidoMensal * 12)}/ano).</div>
+        `;
+      }
+
+      renderCortes(m);
+      renderContas();
+      renderLancamentos();
+      renderMetas(m);
+      drawChart(m);
+    }
+
+    function renderCortes(m) {
+      document.getElementById('sim-eco-mes').textContent = `+ ${fmt(m.economiaSimuladaMes)}`;
+      document.getElementById('sim-eco-dia').textContent = `+ ${fmt(m.economiaSimuladaMes / 30)}/dia`;
+      const novoAno = m.liquidoAnual + (m.economiaSimuladaMes * 12);
+      const novoAnoEl = document.getElementById('sim-novo-ano');
+      novoAnoEl.textContent = fmt(novoAno);
+      novoAnoEl.className = `text-base font-semibold tabular-nums mt-0.5 ${novoAno >= 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'}`;
+
+      const expenses = state.transactions
+        .filter(t => t.type === 'despesa')
+        .map(t => ({ ...t, monthly: monthlyEquivalent(t) }))
+        .sort((a, b) => (b.cuttable - a.cuttable) || (b.monthly - a.monthly));
+
+      const lista = document.getElementById('cortes-lista');
+      if (expenses.length === 0) {
+        lista.innerHTML = `<div class="py-6 text-center text-xs text-[var(--muted-foreground)]">Nenhuma despesa cadastrada ainda.</div>`;
+      } else {
+        lista.innerHTML = expenses.map(tx => {
+          const cutPct = state.cutSimulations[tx.id] || 0;
+          const saved = tx.monthly * (cutPct / 100);
+          return `
+            <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-medium">${escapeHtml(tx.title)}</span>
+                  <span class="text-xs px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--muted-foreground)]">${tx.category}</span>
+                  ${tx.cuttable
+                    ? `<span class="text-xs text-[var(--warning)]">Cortável</span>`
+                    : `<span class="text-xs text-[var(--muted-foreground)]">Essencial/Fixo</span>`}
+                </div>
+                <div class="text-xs text-[var(--muted-foreground)] tabular-nums">
+                  ${fmt(tx.monthly)}/mês (${fmt(tx.monthly / 30)}/dia)
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <input type="range" min="0" max="100" step="10" value="${cutPct}" data-cut-id="${tx.id}" class="w-28 accent-[var(--primary)] cursor-pointer" />
+                <span class="text-xs font-mono tabular-nums w-10 text-right">${cutPct}%</span>
+                <span class="text-xs font-mono tabular-nums w-24 text-right ${saved > 0 ? 'text-[var(--success)] font-medium' : 'text-[var(--muted-foreground)]'}">
+                  ${saved > 0 ? `- ${fmt(saved)}` : '—'}
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        lista.querySelectorAll('input[data-cut-id]').forEach(inp => {
+          inp.addEventListener('input', (e) => {
+            const id = e.target.getAttribute('data-cut-id');
+            state.cutSimulations[id] = Number(e.target.value);
+            saveState();
+            renderAll();
+          });
+        });
+      }
+
+      // Category weights
+      const byCat = {};
+      let totalDesp = 0;
+      expenses.forEach(tx => {
+        byCat[tx.category] = (byCat[tx.category] || 0) + tx.monthly;
+        totalDesp += tx.monthly;
+      });
+      const catEl = document.getElementById('categorias-peso');
+      const sortedCats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+      if (sortedCats.length === 0) {
+        catEl.innerHTML = `<div class="text-xs text-[var(--muted-foreground)]">Sem dados de categorias.</div>`;
+      } else {
+        catEl.innerHTML = sortedCats.map(([cat, val]) => {
+          const pct = totalDesp > 0 ? Math.round((val / totalDesp) * 100) : 0;
+          return `
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs">
+                <span>${escapeHtml(cat)}</span>
+                <span class="font-mono tabular-nums">${fmt(val)}/mês (${pct}%)</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-[var(--background)] overflow-hidden border border-[var(--border)]">
+                <div class="h-full bg-[var(--primary)]" style="width: ${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function renderContas() {
+      const lista = document.getElementById('contas-lista');
+      if (state.accounts.length === 0) {
+        lista.innerHTML = `<div class="py-4 text-center text-xs text-[var(--muted-foreground)]">Nenhuma conta registrada.</div>`;
+        return;
+      }
+      const typeLabels = { corrente: 'Conta Corrente', reserva: 'Reserva/Invest.', cartao: 'Fatura Cartão', dinheiro: 'Dinheiro/Pix' };
+      lista.innerHTML = state.accounts.map(acc => `
+        <div class="py-2.5 flex items-center justify-between gap-2 text-xs">
+          <div>
+            <div class="font-medium">${escapeHtml(acc.name)}</div>
+            <div class="text-[var(--muted-foreground)]">${typeLabels[acc.type] || acc.type}</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-mono tabular-nums font-medium ${acc.balance >= 0 ? 'text-[var(--foreground)]' : 'text-[var(--error)]'}">${fmt(acc.balance)}</span>
+            <button data-del-acc="${acc.id}" class="text-[var(--muted-foreground)] hover:text-[var(--error)] cursor-pointer" title="Remover">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      lista.querySelectorAll('button[data-del-acc]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-del-acc');
+          state.accounts = state.accounts.filter(a => a.id !== id);
+          saveState();
+          renderAll();
+        });
+      });
+
+      document.getElementById('api-url').value = state.apiConfig.url || '';
+      document.getElementById('api-token').value = state.apiConfig.token || '';
+      if (state.apiConfig.lastSync) {
+        document.getElementById('api-status-badge').textContent = 'Sincronizado';
+        document.getElementById('api-status-badge').className = 'text-xs px-2 py-0.5 rounded border border-[var(--success)] text-[var(--success)]';
+      }
+    }
+
+    function renderLancamentos() {
+      const busca = (document.getElementById('filtro-busca').value || '').toLowerCase();
+      const tipo = document.getElementById('filtro-tipo').value;
+      const freqLabel = { diario: 'Diário', semanal: 'Semanal', mensal: 'Mensal', anual: 'Anual', unico: 'Único' };
+
+      const filtered = state.transactions.filter(tx => {
+        if (tipo !== 'todos' && tx.type !== tipo) return false;
+        if (busca && !tx.title.toLowerCase().includes(busca) && !tx.category.toLowerCase().includes(busca)) return false;
+        return true;
+      });
+
+      const lista = document.getElementById('lancamentos-lista');
+      if (filtered.length === 0) {
+        lista.innerHTML = `<div class="py-6 text-center text-xs text-[var(--muted-foreground)]">Nenhum lançamento encontrado.</div>`;
+        return;
+      }
+
+      lista.innerHTML = filtered.map(tx => `
+        <div class="py-2.5 flex items-center justify-between gap-2 text-xs">
+          <div>
+            <div class="font-medium">${escapeHtml(tx.title)}</div>
+            <div class="text-[var(--muted-foreground)]">${tx.category} · ${freqLabel[tx.freq] || tx.freq}</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="font-mono tabular-nums font-medium ${tx.type === 'receita' ? 'text-[var(--success)]' : 'text-[var(--foreground)]'}">
+              ${tx.type === 'receita' ? '+' : '-'} ${fmt(tx.amount)}
+            </span>
+            <button data-del-tx="${tx.id}" class="text-[var(--muted-foreground)] hover:text-[var(--error)] cursor-pointer" title="Excluir">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      lista.querySelectorAll('button[data-del-tx]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-del-tx');
+          state.transactions = state.transactions.filter(t => t.id !== id);
+          delete state.cutSimulations[id];
+          saveState();
+          renderAll();
+        });
+      });
+    }
+
+    function renderMetas(m) {
+      const lista = document.getElementById('metas-lista');
+      if (state.goals.length === 0) {
+        lista.innerHTML = `<div class="text-xs text-[var(--muted-foreground)]">Nenhuma meta adicionada.</div>`;
+        return;
+      }
+
+      const mensalDisponivel = m.liquidoMensal + m.economiaSimuladaMes;
+
+      lista.innerHTML = state.goals.map(g => {
+        const falta = Math.max(0, g.target - Math.max(0, m.saldoAtual));
+        const pct = Math.min(100, Math.max(0, Math.round((Math.max(0, m.saldoAtual) / g.target) * 100)));
+        let prazo = 'Ajuste seu saldo mensal positivo para estimar';
+        if (falta === 0) {
+          prazo = 'Meta já alcançada pelo saldo atual!';
+        } else if (mensalDisponivel > 0) {
+          const meses = Math.ceil(falta / mensalDisponivel);
+          prazo = `~${meses} ${meses === 1 ? 'mês' : 'meses'} no ritmo atual`;
+        }
+        return `
+          <div class="p-3 rounded-md bg-[var(--background)] border border-[var(--border)] space-y-1.5 text-xs">
+            <div class="flex justify-between items-center">
+              <span class="font-medium">${escapeHtml(g.name)}</span>
+              <button data-del-goal="${g.id}" class="text-[var(--muted-foreground)] hover:text-[var(--error)] cursor-pointer">✕</button>
+            </div>
+            <div class="flex justify-between text-[var(--muted-foreground)] tabular-nums">
+              <span>Alvo: ${fmt(g.target)}</span>
+              <span>${pct}%</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-[var(--card)] overflow-hidden border border-[var(--border)]">
+              <div class="h-full bg-[var(--success)]" style="width: ${pct}%"></div>
+            </div>
+            <div class="text-[var(--muted-foreground)]">${prazo}</div>
+          </div>
+        `;
+      }).join('');
+
+      lista.querySelectorAll('button[data-del-goal]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-del-goal');
+          state.goals = state.goals.filter(g => g.id !== id);
+          saveState();
+          renderAll();
+        });
+      });
+    }
+
+    function drawChart(m) {
+      const canvas = document.getElementById('chart-projection');
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const cs = getComputedStyle(document.documentElement);
+      const colorText = cs.getPropertyValue('--muted-foreground').trim() || '#888';
+      const colorBorder = cs.getPropertyValue('--border').trim() || '#444';
+      const colorPrimary = cs.getPropertyValue('--primary').trim() || '#3b82f6';
+      const colorSuccess = cs.getPropertyValue('--success').trim() || '#22c55e';
+
+      const w = rect.width;
+      const h = rect.height;
+      const pad = { top: 14, right: 16, bottom: 26, left: 62 };
+      const plotW = w - pad.left - pad.right;
+      const plotH = h - pad.top - pad.bottom;
+
+      const ptsAtual = [];
+      const ptsSim = [];
+      for (let i = 0; i <= 12; i++) {
+        ptsAtual.push(m.saldoAtual + m.liquidoMensal * i);
+        ptsSim.push(m.saldoAtual + (m.liquidoMensal + m.economiaSimuladaMes) * i);
+      }
+
+      const allVals = [...ptsAtual, ...ptsSim, 0];
+      const minV = Math.min(...allVals);
+      const maxV = Math.max(...allVals);
+      const range = (maxV - minV) || 1;
+
+      const xPos = (i) => pad.left + (i / 12) * plotW;
+      const yPos = (v) => pad.top + plotH - ((v - minV) / range) * plotH;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Grid lines
+      ctx.strokeStyle = colorBorder;
+      ctx.lineWidth = 1;
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.fillStyle = colorText;
+
+      for (let g = 0; g <= 4; g++) {
+        const val = minV + (range * g) / 4;
+        const y = yPos(val);
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(w - pad.right, y);
+        ctx.stroke();
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(shortCurrency(val), pad.left - 8, y);
+      }
+
+      // X labels
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      [0, 3, 6, 9, 12].forEach(i => {
+        ctx.fillText(i === 0 ? 'Hoje' : `+${i}m`, xPos(i), h - 18);
+      });
+
+      // Simulated line (dashed)
+      if (m.economiaSimuladaMes > 0) {
+        ctx.save();
+        ctx.strokeStyle = colorSuccess;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ptsSim.forEach((v, i) => {
+          if (i === 0) ctx.moveTo(xPos(i), yPos(v));
+          else ctx.lineTo(xPos(i), yPos(v));
+        });
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Current trajectory line
+      ctx.strokeStyle = colorPrimary;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ptsAtual.forEach((v, i) => {
+        if (i === 0) ctx.moveTo(xPos(i), yPos(v));
+        else ctx.lineTo(xPos(i), yPos(v));
+      });
+      ctx.stroke();
+    }
+
+    function shortCurrency(v) {
+      const abs = Math.abs(v);
+      const sign = v < 0 ? '-' : '';
+      if (abs >= 1000) return `${sign}R$${(abs / 1000).toFixed(1)}k`;
+      return `${sign}R$${Math.round(abs)}`;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+    }
+
+    // Tabs
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        const active = b.getAttribute('data-tab') === tabName;
+        b.classList.toggle('border-[var(--primary)]', active);
+        b.classList.toggle('text-[var(--foreground)]', active);
+        b.classList.toggle('border-transparent', !active);
+        b.classList.toggle('text-[var(--muted-foreground)]', !active);
+      });
+      if (tabName === 'visao') drawChart(computeMetrics());
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+    });
+
+    document.querySelectorAll('[data-goto-tab]').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.getAttribute('data-goto-tab')));
+    });
+
+    document.getElementById('btn-open-api').addEventListener('click', () => switchTab('saldos'));
+
+    // Modal Novo Lançamento
+    const modal = document.getElementById('modal-lancamento');
+    document.getElementById('btn-quick-add').addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    });
+    const closeModal = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+    document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+    document.getElementById('btn-cancel-modal').addEventListener('click', closeModal);
+
+    document.getElementById('form-lancamento').addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.transactions.unshift({
+        id: 'tx_' + Date.now(),
+        title: document.getElementById('lanc-titulo').value.trim(),
+        type: document.getElementById('lanc-tipo').value,
+        amount: parseFloat(document.getElementById('lanc-valor').value),
+        freq: document.getElementById('lanc-freq').value,
+        category: document.getElementById('lanc-cat').value,
+        cuttable: document.getElementById('lanc-cortavel').checked,
+        createdAt: new Date().toISOString().slice(0, 10)
+      });
+      saveState();
+      e.target.reset();
+      document.getElementById('lanc-cortavel').checked = true;
+      closeModal();
+      renderAll();
+    });
+
+    // Form Conta
+    document.getElementById('form-conta').addEventListener('submit', (e) => {
+      e.preventDefault();
+      let val = parseFloat(document.getElementById('conta-valor').value);
+      const type = document.getElementById('conta-tipo').value;
+      if (type === 'cartao' && val > 0) val = -val;
+      state.accounts.push({
+        id: 'acc_' + Date.now(),
+        name: document.getElementById('conta-nome').value.trim(),
+        type,
+        balance: val
+      });
+      saveState();
+      e.target.reset();
+      renderAll();
+    });
+
+    // Form Meta
+    document.getElementById('form-meta').addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.goals.push({
+        id: 'g_' + Date.now(),
+        name: document.getElementById('meta-nome').value.trim(),
+        target: parseFloat(document.getElementById('meta-valor').value)
+      });
+      saveState();
+      e.target.reset();
+      renderAll();
+    });
+
+    // Meta mensal input
+    document.getElementById('input-meta-mensal').addEventListener('change', (e) => {
+      state.metaMensal = Math.max(0, parseFloat(e.target.value) || 0);
+      saveState();
+      renderAll();
+    });
+
+    // Reset simulations
+    document.getElementById('btn-reset-sim').addEventListener('click', () => {
+      state.cutSimulations = {};
+      saveState();
+      renderAll();
+    });
+
+    // Filters
+    document.getElementById('filtro-busca').addEventListener('input', renderLancamentos);
+    document.getElementById('filtro-tipo').addEventListener('change', renderLancamentos);
+
+    // API Sync
+    function applyApiPayload(data) {
+      let countAcc = 0, countTx = 0;
+      if (Array.isArray(data.accounts)) {
+        state.accounts = data.accounts.map((a, i) => ({
+          id: a.id || `api_acc_${i}_${Date.now()}`,
+          name: a.name || 'Conta API',
+          type: a.type || 'corrente',
+          balance: Number(a.balance) || 0
+        }));
+        countAcc = state.accounts.length;
+      }
+      if (Array.isArray(data.transactions)) {
+        const imported = data.transactions.map((t, i) => ({
+          id: t.id || `api_tx_${i}_${Date.now()}`,
+          title: t.title || 'Lançamento API',
+          type: t.type === 'receita' ? 'receita' : 'despesa',
+          freq: t.freq || 'mensal',
+          amount: Math.abs(Number(t.amount) || 0),
+          category: t.category || 'Outros',
+          cuttable: Boolean(t.cuttable),
+          createdAt: new Date().toISOString().slice(0, 10)
+        }));
+        state.transactions = [...imported, ...state.transactions];
+        countTx = imported.length;
+      }
+      state.apiConfig.lastSync = new Date().toISOString();
+      saveState();
+      renderAll();
+      return { countAcc, countTx };
+    }
+
+    document.getElementById('btn-sync-api').addEventListener('click', async () => {
+      const url = document.getElementById('api-url').value.trim();
+      const token = document.getElementById('api-token').value.trim();
+      const log = document.getElementById('api-log');
+      if (!url) {
+        log.textContent = 'Erro: informe a URL do endpoint JSON.';
+        return;
+      }
+      state.apiConfig.url = url;
+      state.apiConfig.token = token;
+      saveState();
+      log.textContent = 'Conectando ao endpoint...';
+      try {
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const res = await fetch(url, { headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const { countAcc, countTx } = applyApiPayload(data);
+        log.textContent = `Sucesso! ${countAcc} conta(s) atualizada(s) e ${countTx} lançamento(s) importado(s).`;
+      } catch (err) {
+        log.textContent = `Falha na requisição (${err.message}). Verifique CORS ou use um proxy/backend.`;
+      }
+    });
+
+    document.getElementById('btn-demo-api').addEventListener('click', () => {
+      const simulated = {
+        accounts: [
+          { name: 'Nubank (via Open Finance)', type: 'corrente', balance: 4890.50 },
+          { name: 'XP Investimentos (via API)', type: 'reserva', balance: 12400.00 },
+          { name: 'Cartão Black (via API)', type: 'cartao', balance: -1650.25 }
+        ],
+        transactions: [
+          { title: 'Freela / Projeto Extra', type: 'receita', freq: 'unico', amount: 1400, category: 'Renda', cuttable: false }
+        ]
+      };
+      const { countAcc, countTx } = applyApiPayload(simulated);
+      document.getElementById('api-log').textContent = `Simulação concluída: ${countAcc} contas sincronizadas e ${countTx} lançamento adicionado.`;
+    });
+
+    // Export / Import
+    document.getElementById('btn-export').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fluxo-financeiro-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('input-import').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          state = { ...structuredClone(defaultState), ...parsed };
+          saveState();
+          renderAll();
+        } catch {
+          alert('Arquivo JSON inválido.');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    window.addEventListener('resize', () => drawChart(computeMetrics()));
+    window.addEventListener('themechange', () => drawChart(computeMetrics()));
+
+    renderAll();
+  </script>
+</body>
+</html>
