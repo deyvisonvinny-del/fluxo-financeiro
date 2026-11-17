@@ -239,44 +239,59 @@
     }
 
     .mobile-nav {
-      display: flex;
-      gap: 6px;
-      padding: 10px 16px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
       background: var(--bg-sidebar);
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      scrollbar-width: none;
+      border-top: 1px solid var(--border-strong);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
     }
-    .mobile-nav::-webkit-scrollbar { display: none; }
     @media (min-width: 960px) {
       .mobile-nav { display: none; }
     }
     .mobile-tab {
-      padding: 7px 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 6px 4px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
       color: var(--fg-muted);
       font-family: inherit;
-      font-size: 0.78rem;
+      font-size: 0.68rem;
       font-weight: 600;
       white-space: nowrap;
       cursor: pointer;
+      transition: all 0.14s ease;
     }
     .mobile-tab.active {
       background: var(--primary-soft);
       color: var(--primary);
-      border-color: transparent;
     }
+
+    .mobile-only { display: block; }
+    @media (min-width: 960px) { .mobile-only { display: none !important; } }
 
     .content {
       max-width: 1120px;
       width: 100%;
       margin: 0 auto;
-      padding: 20px 16px 56px;
+      padding: 14px 12px calc(86px + env(safe-area-inset-bottom));
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 14px;
+    }
+    @media (min-width: 640px) {
+      .content { padding: 20px 18px calc(88px + env(safe-area-inset-bottom)); gap: 18px; }
     }
     @media (min-width: 960px) {
       .content { padding: 24px 28px 64px; gap: 22px; }
@@ -333,11 +348,8 @@
     /* Wealth Pillars (Saldo, Dívidas, Investimentos, Patrimônio) */
     .pillars-grid {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-    @media (min-width: 580px) {
-      .pillars-grid { grid-template-columns: repeat(2, 1fr); }
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
     }
     @media (min-width: 1100px) {
       .pillars-grid { grid-template-columns: repeat(4, 1fr); gap: 14px; }
@@ -347,10 +359,13 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 10px;
-      padding: 16px 18px;
+      gap: 6px;
+      padding: 13px 14px;
       position: relative;
       overflow: hidden;
+    }
+    @media (min-width: 640px) {
+      .pillar-card { padding: 16px 18px; gap: 10px; }
     }
     .pillar-card::before {
       content: "";
@@ -367,20 +382,27 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 6px;
     }
     .pillar-label {
-      font-size: 0.76rem;
+      font-size: 0.68rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       color: var(--fg-muted);
     }
+    @media (min-width: 640px) {
+      .pillar-label { font-size: 0.76rem; }
+    }
     .pillar-chip {
-      font-size: 0.7rem;
+      font-size: 0.64rem;
       font-weight: 600;
-      padding: 2px 8px;
+      padding: 2px 6px;
       border-radius: 999px;
+      display: none;
+    }
+    @media (min-width: 480px) {
+      .pillar-chip { display: inline-flex; }
     }
     .chip-saldo { background: var(--saldo-soft); color: var(--saldo); }
     .chip-divida { background: var(--divida-soft); color: var(--divida); }
@@ -389,9 +411,13 @@
 
     .pillar-val {
       font-family: var(--font-mono);
-      font-size: 1.38rem;
+      font-size: 1.06rem;
       font-weight: 700;
       letter-spacing: -0.02em;
+      word-break: break-word;
+    }
+    @media (min-width: 640px) {
+      .pillar-val { font-size: 1.38rem; }
     }
     .pillar-sub {
       font-size: 0.75rem;
@@ -691,37 +717,48 @@
       white-space: pre-wrap;
     }
 
-    /* Modal */
+    /* Modal (Bottom sheet on mobile, centered on desktop) */
     .modal-backdrop {
       position: fixed;
       inset: 0;
       z-index: 50;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
-      padding: 16px;
+      padding: 0;
       background: rgba(7, 13, 11, 0.6);
       backdrop-filter: blur(5px);
     }
     .modal-panel {
       width: 100%;
-      max-width: 440px;
+      max-width: 100%;
       background: var(--card);
       border: 1px solid var(--border-strong);
-      border-radius: 16px;
-      padding: 22px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 18px calc(22px + env(safe-area-inset-bottom));
       box-shadow: var(--shadow-lg);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    @media (min-width: 640px) {
+      .modal-backdrop { align-items: center; padding: 16px; }
+      .modal-panel { max-width: 440px; border-radius: 16px; padding: 22px; }
     }
 
     .toast-container {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: calc(74px + env(safe-area-inset-bottom));
+      right: 14px;
+      left: 14px;
+      align-items: center;
       z-index: 60;
       display: flex;
       flex-direction: column;
       gap: 8px;
       pointer-events: none;
+    }
+    @media (min-width: 960px) {
+      .toast-container { bottom: 20px; right: 20px; left: auto; align-items: flex-end; }
     }
     .toast {
       padding: 10px 14px;
@@ -731,6 +768,20 @@
       font-size: 0.8rem;
       font-weight: 600;
       box-shadow: var(--shadow-md);
+    }
+
+    /* Mobile Touch & Input Ergonomics */
+    @media (max-width: 959px) {
+      .input, .select, .input-group input {
+        font-size: 16px;
+        min-height: 42px;
+      }
+      .btn { min-height: 38px; }
+      .del-btn { width: 34px; height: 34px; }
+      .topbar { padding: 12px 14px; }
+      .topbar p { display: none; }
+      input[type="range"].cut-slider { width: 100%; height: 8px; }
+      input[type="range"].cut-slider::-webkit-slider-thumb { width: 22px; height: 22px; }
     }
 
     .text-saldo { color: var(--saldo); }
@@ -823,12 +874,24 @@
         </div>
       </header>
 
-      <!-- Mobile Navigation -->
+      <!-- Mobile Bottom Navigation -->
       <nav class="mobile-nav" aria-label="Navegação móvel">
-        <button data-tab="visao" class="mobile-tab active">Visão Geral</button>
-        <button data-tab="patrimonio" class="mobile-tab">Saldo, Dívidas &amp; Invest.</button>
-        <button data-tab="cortes" class="mobile-tab">Cortes</button>
-        <button data-tab="historico" class="mobile-tab">Lançamentos &amp; Metas</button>
+        <button data-tab="visao" class="mobile-tab active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+          <span>Visão</span>
+        </button>
+        <button data-tab="patrimonio" class="mobile-tab">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          <span>Patrimônio</span>
+        </button>
+        <button data-tab="cortes" class="mobile-tab">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+          <span>Cortes</span>
+        </button>
+        <button data-tab="historico" class="mobile-tab">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <span>Metas</span>
+        </button>
       </nav>
 
       <div class="content">
