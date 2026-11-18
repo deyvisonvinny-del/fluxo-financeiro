@@ -1000,6 +1000,46 @@
             </div>
           </div>
 
+          <!-- Cartões de Crédito & Reserva de Emergência -->
+          <div class="grid-2">
+            <div class="card" style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <div>
+                  <h2 class="section-title">Cartões de Crédito &amp; Faturas</h2>
+                  <p class="section-sub">Acompanhe o vencimento de cada fatura.</p>
+                </div>
+                <button type="button" id="btn-goto-cartoes" class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.74rem;">+ Cartão</button>
+              </div>
+              <div id="visao-cartoes-lista" class="list-divide"></div>
+            </div>
+
+            <div class="card" style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div>
+                  <h2 class="section-title">Reserva de Emergência</h2>
+                  <p id="reserva-sub" class="section-sub">Meta de 6 meses dos seus gastos</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <button type="button" data-reserva-meses="3" class="quick-cut-btn">3m</button>
+                  <button type="button" data-reserva-meses="6" class="quick-cut-btn">6m</button>
+                  <button type="button" data-reserva-meses="9" class="quick-cut-btn">9m</button>
+                  <button type="button" data-reserva-meses="12" class="quick-cut-btn">12m</button>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+                <span id="reserva-atual" class="mono text-invest" style="font-size: 1.25rem; font-weight: 700;">R$ 0,00</span>
+                <span id="reserva-alvo" class="mono text-muted" style="font-size: 0.8rem;">de R$ 0,00</span>
+              </div>
+              <div class="progress-track" style="height: 10px;">
+                <div id="reserva-barra" class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.78rem;">
+                <span id="reserva-cobertura" style="font-weight: 600;">Cobre 0,0 meses</span>
+                <span id="reserva-falta" class="text-muted"></span>
+              </div>
+            </div>
+          </div>
+
           <div class="grid-chart">
             <div class="card">
               <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
@@ -1038,8 +1078,8 @@
           <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;">
             <div class="seg-tabs" role="tablist" aria-label="Categorias patrimoniais">
               <button type="button" data-subtab="saldo" class="seg-btn active">Saldo em Contas</button>
-              <button type="button" data-subtab="dividas" class="seg-btn">Dívidas &amp; Faturas</button>
-              <button type="button" data-subtab="investimentos" class="seg-btn">Investimentos</button>
+              <button type="button" data-subtab="dividas" class="seg-btn">Cartões &amp; Dívidas</button>
+              <button type="button" data-subtab="investimentos" class="seg-btn">Reserva &amp; Invest.</button>
               <button type="button" data-subtab="api" class="seg-btn">Integração API</button>
             </div>
             <div style="font-size: 0.78rem;" class="text-muted">
@@ -1065,44 +1105,46 @@
             <div id="lista-saldos" class="list-divide"></div>
           </div>
 
-          <!-- Subtab: Dívidas -->
+          <!-- Subtab: Cartões & Dívidas -->
           <div id="subtab-dividas" class="card subtab-panel hidden" style="display: flex; flex-direction: column; gap: 16px;">
             <div>
-              <h2 class="section-title">Dívidas, Faturas &amp; Financiamentos</h2>
-              <p class="section-sub">Adicione faturas de cartão, empréstimos ou parcelas. O valor será subtraído do patrimônio.</p>
+              <h2 class="section-title">Cartões de Crédito, Faturas &amp; Dívidas</h2>
+              <p class="section-sub">Informe o valor da fatura ou dívida e o dia de vencimento para receber alertas.</p>
             </div>
-            <form id="form-divida" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
-              <input id="divida-nome" type="text" placeholder="Ex: Cartão Black, Empréstimo" required class="input" />
+            <form id="form-divida" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 8px;">
+              <input id="divida-nome" type="text" placeholder="Ex: Cartão Nubank, Itaú" required class="input" />
               <select id="divida-tipo" class="select">
-                <option value="cartao">Fatura de Cartão</option>
+                <option value="cartao">Cartão de Crédito</option>
                 <option value="emprestimo">Empréstimo</option>
                 <option value="financiamento">Financiamento</option>
                 <option value="divida">Outra Dívida</option>
               </select>
-              <input id="divida-valor" type="number" min="0.01" step="0.01" placeholder="Valor devido R$" required class="input mono" />
-              <input id="divida-obs" type="text" placeholder="Juros / Parcelas (opcional)" class="input" />
-              <button type="submit" class="btn btn-primary" style="background: var(--divida); color: #fff;">+ Registrar Dívida</button>
+              <input id="divida-valor" type="number" min="0.01" step="0.01" placeholder="Fatura / Valor R$" required class="input mono" />
+              <input id="divida-vencimento" type="number" min="1" max="31" placeholder="Dia venc. (1-31)" class="input mono" />
+              <input id="divida-obs" type="text" placeholder="Obs / Parcelas (opcional)" class="input" />
+              <button type="submit" class="btn btn-primary" style="background: var(--divida); color: #fff;">+ Registrar</button>
             </form>
             <div id="lista-dividas" class="list-divide"></div>
           </div>
 
-          <!-- Subtab: Investimentos -->
+          <!-- Subtab: Reserva & Investimentos -->
           <div id="subtab-investimentos" class="card subtab-panel hidden" style="display: flex; flex-direction: column; gap: 16px;">
             <div>
-              <h2 class="section-title">Investimentos &amp; Reservas</h2>
-              <p class="section-sub">Acompanhe CDBs, Tesouro, Ações, FIIs, Cripto e reserva de emergência.</p>
+              <h2 class="section-title">Reserva de Emergência &amp; Investimentos</h2>
+              <p class="section-sub">Registre sua reserva de emergência, CDBs, Tesouro, Ações, FIIs ou Cripto.</p>
             </div>
             <form id="form-invest" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px;">
-              <input id="invest-nome" type="text" placeholder="Ex: Tesouro Selic, CDB 100%" required class="input" />
+              <input id="invest-nome" type="text" placeholder="Ex: Reserva Nubank, Tesouro" required class="input" />
               <select id="invest-tipo" class="select">
-                <option value="reserva">Reserva / Renda Fixa</option>
+                <option value="emergencia">Reserva de Emergência</option>
+                <option value="reserva">Renda Fixa / CDB</option>
                 <option value="acoes">Ações / FIIs</option>
                 <option value="cripto">Criptomoedas</option>
                 <option value="previdencia">Previdência</option>
               </select>
-              <input id="invest-valor" type="number" min="0.01" step="0.01" placeholder="Valor aplicado R$" required class="input mono" />
+              <input id="invest-valor" type="number" min="0.01" step="0.01" placeholder="Valor guardado R$" required class="input mono" />
               <input id="invest-obs" type="text" placeholder="Rentabilidade (ex: 100% CDI)" class="input" />
-              <button type="submit" class="btn btn-primary">+ Adicionar Investimento</button>
+              <button type="submit" class="btn btn-primary">+ Adicionar</button>
             </form>
             <div id="lista-investimentos" class="list-divide"></div>
           </div>
@@ -1307,10 +1349,11 @@
 
     const defaultState = {
       metaMensal: 800,
+      reservaMeses: 6,
       accounts: [
         { id: 'acc1', name: 'Conta Principal', type: 'corrente', balance: 3450.00 },
-        { id: 'acc2', name: 'Reserva / CDB', type: 'reserva', balance: 8200.00, note: '100% CDI' },
-        { id: 'acc3', name: 'Fatura Cartão', type: 'cartao', balance: -1240.00, note: 'Vence dia 10' }
+        { id: 'acc2', name: 'Reserva / CDB', type: 'emergencia', balance: 8200.00, note: '100% CDI' },
+        { id: 'acc3', name: 'Fatura Cartão', type: 'cartao', balance: -1240.00, dueDay: 10, note: 'Cartão principal' }
       ],
       transactions: [
         { id: 'tx1', title: 'Salário / Pró-labore', type: 'receita', freq: 'mensal', amount: 5800, category: 'Renda', cuttable: false, createdAt: '2026-11-01' },
@@ -1348,10 +1391,28 @@
 
     function classifyAccount(acc) {
       const debtTypes = ['cartao', 'emprestimo', 'financiamento', 'divida'];
-      const investTypes = ['reserva', 'acoes', 'cripto', 'previdencia', 'investimento'];
+      const investTypes = ['emergencia', 'reserva', 'acoes', 'cripto', 'previdencia', 'investimento'];
       if (debtTypes.includes(acc.type) || acc.balance < 0) return 'divida';
       if (investTypes.includes(acc.type)) return 'investimento';
       return 'saldo';
+    }
+
+    function getDueInfo(dueDay) {
+      const d = parseInt(dueDay, 10);
+      if (!d || d < 1 || d > 31) return null;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const daysInThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      let target = new Date(now.getFullYear(), now.getMonth(), Math.min(d, daysInThisMonth));
+      if (target < today) {
+        const daysInNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0).getDate();
+        target = new Date(now.getFullYear(), now.getMonth() + 1, Math.min(d, daysInNextMonth));
+      }
+      const diff = Math.round((target - today) / (1000 * 60 * 60 * 24));
+      if (diff === 0) return { label: `Dia ${d} · Vence HOJE!`, pillClass: 'pill-error', days: 0 };
+      if (diff === 1) return { label: `Dia ${d} · Vence amanhã`, pillClass: 'pill-error', days: 1 };
+      if (diff <= 5) return { label: `Dia ${d} · em ${diff} dias`, pillClass: 'pill-warning', days: diff };
+      return { label: `Dia ${d} · em ${diff} dias`, pillClass: '', days: diff };
     }
 
     function monthlyEquivalent(tx) {
@@ -1515,6 +1576,7 @@
         diagEl.innerHTML = `<div class="text-invest" style="font-weight: 700;">Meta atingida!</div><div class="text-muted">Sobra de ${fmt(m.liquidoMensal)}/mês para quitar dívidas ou investir.</div>`;
       }
 
+      renderCartoesEReserva(m);
       renderPatrimonioLists();
       renderCortes(m);
       renderLancamentos();
@@ -1522,15 +1584,62 @@
       drawChart(m);
     }
 
+    function renderCartoesEReserva(m) {
+      // Cartões de crédito
+      const cartoesEl = document.getElementById('visao-cartoes-lista');
+      const cards = state.accounts.filter(a => a.type === 'cartao');
+      if (cards.length === 0) {
+        cartoesEl.innerHTML = `<div style="padding: 12px 0; font-size: 0.8rem;" class="text-muted">Nenhum cartão cadastrado. Clique em <strong>+ Cartão</strong> para adicionar.</div>`;
+      } else {
+        cartoesEl.innerHTML = cards.map(c => {
+          const due = getDueInfo(c.dueDay);
+          return `
+            <div class="list-row" style="padding: 9px 0;">
+              <div>
+                <div style="font-weight: 600; font-size: 0.84rem;">${escapeHtml(c.name)}</div>
+                <div style="margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  ${due ? `<span class="pill ${due.pillClass}">${due.label}</span>` : `<span class="pill">Sem vencimento</span>`}
+                </div>
+              </div>
+              <span class="mono text-divida" style="font-weight: 700; font-size: 0.88rem;">${fmt(Math.abs(c.balance))}</span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Reserva de emergência
+      const mesesMeta = Number(state.reservaMeses) || 6;
+      const reservaTotal = state.accounts
+        .filter(a => a.type === 'emergencia' || a.type === 'reserva')
+        .reduce((s, a) => s + Math.max(0, Number(a.balance) || 0), 0);
+      const gastoMensal = Math.max(1, m.despTotalMensal);
+      const alvo = gastoMensal * mesesMeta;
+      const cobertura = reservaTotal / gastoMensal;
+      const pct = Math.min(100, Math.round((reservaTotal / alvo) * 100));
+      const falta = Math.max(0, alvo - reservaTotal);
+
+      document.getElementById('reserva-sub').textContent = `Meta de ${mesesMeta} meses (${fmt(gastoMensal)}/mês)`;
+      document.getElementById('reserva-atual').textContent = fmt(reservaTotal);
+      document.getElementById('reserva-alvo').textContent = `de ${fmt(alvo)}`;
+      document.getElementById('reserva-barra').style.width = `${pct}%`;
+      document.getElementById('reserva-cobertura').textContent = `Cobre ${cobertura.toFixed(1).replace('.', ',')} meses (${pct}%)`;
+      document.getElementById('reserva-falta').textContent = falta > 0 ? `Falta ${fmt(falta)}` : 'Reserva completa!';
+
+      document.querySelectorAll('[data-reserva-meses]').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.getAttribute('data-reserva-meses')) === mesesMeta);
+      });
+    }
+
     function renderPatrimonioLists() {
       const typeLabels = {
         corrente: 'Conta Corrente',
         dinheiro: 'Dinheiro / Pix',
-        cartao: 'Fatura de Cartão',
+        cartao: 'Cartão de Crédito',
         emprestimo: 'Empréstimo',
         financiamento: 'Financiamento',
         divida: 'Outra Dívida',
-        reserva: 'Reserva / Renda Fixa',
+        emergencia: 'Reserva de Emergência',
+        reserva: 'Renda Fixa / CDB',
         acoes: 'Ações / FIIs',
         cripto: 'Criptomoedas',
         previdencia: 'Previdência',
@@ -1544,23 +1653,27 @@
           el.innerHTML = `<div style="padding: 18px 0; text-align: center; font-size: 0.8rem;" class="text-muted">${emptyMsg}</div>`;
           return;
         }
-        el.innerHTML = items.map(acc => `
-          <div class="list-row">
-            <div>
-              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(acc.name)}</span>
-                <span class="pill ${pillClass}">${typeLabels[acc.type] || acc.type}</span>
+        el.innerHTML = items.map(acc => {
+          const due = groupName === 'divida' ? getDueInfo(acc.dueDay) : null;
+          return `
+            <div class="list-row">
+              <div>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span style="font-weight: 600; font-size: 0.85rem;">${escapeHtml(acc.name)}</span>
+                  <span class="pill ${pillClass}">${typeLabels[acc.type] || acc.type}</span>
+                  ${due ? `<span class="pill ${due.pillClass}">${due.label}</span>` : ''}
+                </div>
+                ${acc.note ? `<div class="text-muted" style="font-size: 0.74rem; margin-top: 2px;">${escapeHtml(acc.note)}</div>` : ''}
               </div>
-              ${acc.note ? `<div class="text-muted" style="font-size: 0.74rem; margin-top: 2px;">${escapeHtml(acc.note)}</div>` : ''}
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="mono ${groupName === 'divida' ? 'text-divida' : groupName === 'investimento' ? 'text-invest' : 'text-saldo'}" style="font-weight: 700; font-size: 0.88rem;">
+                  ${groupName === 'divida' ? fmt(Math.abs(acc.balance)) : fmt(acc.balance)}
+                </span>
+                <button data-del-acc="${acc.id}" class="del-btn" title="Remover">✕</button>
+              </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span class="mono ${groupName === 'divida' ? 'text-divida' : groupName === 'investimento' ? 'text-invest' : 'text-saldo'}" style="font-weight: 700; font-size: 0.88rem;">
-                ${groupName === 'divida' ? fmt(Math.abs(acc.balance)) : fmt(acc.balance)}
-              </span>
-              <button data-del-acc="${acc.id}" class="del-btn" title="Remover">✕</button>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
 
         el.querySelectorAll('button[data-del-acc]').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -1902,17 +2015,35 @@
       saveState(); e.target.reset(); renderAll(); showToast('Saldo adicionado');
     });
 
+    document.getElementById('btn-goto-cartoes').addEventListener('click', () => {
+      switchTab('patrimonio');
+      switchSubtab('dividas');
+      setTimeout(() => document.getElementById('divida-nome').focus(), 50);
+    });
+
+    document.querySelectorAll('[data-reserva-meses]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.reservaMeses = Number(btn.getAttribute('data-reserva-meses'));
+        saveState();
+        renderAll();
+        showToast(`Meta da reserva: ${state.reservaMeses} meses`);
+      });
+    });
+
     document.getElementById('form-divida').addEventListener('submit', (e) => {
       e.preventDefault();
       const val = Math.abs(parseFloat(document.getElementById('divida-valor').value));
+      const dueRaw = document.getElementById('divida-vencimento').value;
+      const dueDay = dueRaw ? Math.min(31, Math.max(1, parseInt(dueRaw, 10))) : null;
       state.accounts.push({
         id: 'acc_' + Date.now(),
         name: document.getElementById('divida-nome').value.trim(),
         type: document.getElementById('divida-tipo').value,
         balance: -val,
+        dueDay,
         note: document.getElementById('divida-obs').value.trim()
       });
-      saveState(); e.target.reset(); renderAll(); showToast('Dívida registrada');
+      saveState(); e.target.reset(); renderAll(); showToast('Registro salvo');
     });
 
     document.getElementById('form-invest').addEventListener('submit', (e) => {
